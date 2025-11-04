@@ -1,12 +1,12 @@
 import React from "react";
 import Main from "./components/Main";
-import Product from "../shoppage/components/products";
+import Products from "./components/Products";
 
 const Shop = () => {
   return (
     <div>
       <Main />
-      <Product />
+      <Products />
     </div>
   );
 };
