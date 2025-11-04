@@ -1,12 +1,12 @@
-import Shop from '@/components/shoppage/Shop'
-import React from 'react'
+import Shop from "../../components/shoppage/Shop";
+import React from "react";
 
 const page = () => {
   return (
     <div>
-        <Shop />
+      <Shop />
     </div>
-  )
-}
+  );
+};
 
-export default page
+export default page;
