@@ -18,9 +18,6 @@ const geistMono = Geist_Mono({
 export const metadata = {
   title: "Drobee",
   description: "E-commerse Website",
-  icons: {
-    icon: [{ url: "/favicon.png", type: "image/png" }],
-  },
 };
 
 export default function RootLayout({ children }) {

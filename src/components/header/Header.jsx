@@ -204,7 +204,9 @@ const Header = () => {
                     className="w-7 h-7 cursor-pointer"
                     onClick={handleUserClick}
                   />
-                  <ShoppingBagIcon className="w-7 h-7 cursor-pointer" />
+                  <Link href="/cart">
+                    <ShoppingBagIcon className="w-7 h-7 cursor-pointer" />
+                  </Link>
                 </div>
               </motion.div>
             </motion.div>
