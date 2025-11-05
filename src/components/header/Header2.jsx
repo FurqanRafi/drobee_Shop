@@ -148,8 +148,9 @@ const Header2 = () => {
                 <Search className="w-5 h-5 cursor-pointer" />
               </motion.button>
             </div>
-
-            <ShoppingBagIcon className="w-5 h-5 cursor-pointer" />
+            <Link href="/cartPage">
+              <ShoppingBagIcon className="w-5 h-5 cursor-pointer" />
+            </Link>
 
             {/* ✅ User Icon with Login/Profile Logic */}
             <User
@@ -218,7 +219,9 @@ const Header2 = () => {
                       handleUserClick();
                     }}
                   />
-                  <ShoppingBagIcon className="w-7 h-7 cursor-pointer" />
+                  <Link href="/cartPage">
+                    <ShoppingBagIcon className="w-7 h-7 cursor-pointer" />
+                  </Link>
                 </div>
               </motion.div>
             </motion.div>
