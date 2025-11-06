@@ -16,6 +16,7 @@ const initialProducts = [
       { name: "Green", class: "bg-green-500", imgIndex: 2 },
       { name: "Black", class: "bg-black", imgIndex: 3 },
     ],
+    sizes: ["M", "L", "XL"],
   },
   {
     id: 2,
@@ -33,6 +34,7 @@ const initialProducts = [
       { name: "Red", class: "bg-red-500", imgIndex: 1 },
       { name: "Green", class: "bg-green-500", imgIndex: 2 },
     ],
+    sizes: [], // Not popular
   },
   {
     id: 3,
@@ -51,6 +53,7 @@ const initialProducts = [
       { name: "Green", class: "bg-green-500", imgIndex: 2 },
       { name: "Red", class: "bg-red-500", imgIndex: 3 },
     ],
+    sizes: [], // Not popular
   },
   {
     id: 4,
@@ -69,6 +72,7 @@ const initialProducts = [
       { name: "Green", class: "bg-green-500", imgIndex: 2 },
       { name: "Red", class: "bg-red-500", imgIndex: 3 },
     ],
+    sizes: ["S", "M", "L", "XL"],
   },
   {
     id: 5,
@@ -82,6 +86,7 @@ const initialProducts = [
     price: 250.0,
     popular: false,
     colors: [],
+    sizes: [], // Not popular
   },
   {
     id: 6,
@@ -95,6 +100,7 @@ const initialProducts = [
     price: 109.99,
     popular: false,
     colors: [],
+    sizes: [], // Not popular
   },
   {
     id: 7,
@@ -108,6 +114,7 @@ const initialProducts = [
     price: 224.95,
     popular: true,
     colors: [],
+    sizes: ["S", "M", "L", "XL"],
   },
   {
     id: 8,
@@ -126,6 +133,7 @@ const initialProducts = [
     price: 119.95,
     popular: true,
     colors: [],
+    sizes: ["S", "M", "L"],
   },
 ];
 

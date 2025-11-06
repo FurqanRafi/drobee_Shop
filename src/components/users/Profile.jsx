@@ -12,19 +12,31 @@ import {
   Edit3,
   Save,
   X,
+  ShoppingCart,
 } from "lucide-react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
+import { useSelector, useDispatch } from "react-redux";
+import {
+  removeFromCart,
+  updateCartItemQuantity,
+  addToCart,
+} from "@/redux/cartSlice";
+import Link from "next/link";
 
 const Profile = () => {
   const router = useRouter();
+  const dispatch = useDispatch();
   const [activeTab, setActiveTab] = useState("information");
   const [userData, setUserData] = useState(null);
   const [editData, setEditData] = useState({});
   const [isEditing, setIsEditing] = useState(false);
   const [loadingSave, setLoadingSave] = useState(false);
   const [loadingLogout, setLoadingLogout] = useState(false);
+
+  // Get cart items from Redux
+  const cartItems = useSelector((state) => state.cart.cartItems);
 
   const [passwordData, setPasswordData] = useState({
     oldPassword: "",
@@ -132,6 +144,33 @@ const Profile = () => {
       </div>
     );
   }
+
+  // Cart handlers
+  const handleQuantityChange = (item, type) => {
+    if (type === "increment") {
+      dispatch(addToCart({ ...item, quantity: 1 }));
+    } else if (type === "decrement") {
+      if (item.quantity > 1) {
+        dispatch(addToCart({ ...item, quantity: -1 }));
+      }
+    }
+  };
+
+  const handleRemoveItem = (item) => {
+    dispatch(
+      removeFromCart({
+        id: item.id,
+        size: item.size,
+        color: item.color,
+      })
+    );
+    showLuxuryToast("Item removed from cart", "success");
+  };
+
+  const cartSubtotal = cartItems.reduce(
+    (total, item) => total + item.price * item.quantity,
+    0
+  );
 
   // ✅ Input change
   const handleInputChange = (e) => {
@@ -309,6 +348,23 @@ const Profile = () => {
                   </button>
 
                   <button
+                    onClick={() => setActiveTab("cart")}
+                    className={`w-full flex items-center gap-3 px-4 py-3 text-sm tracking-wider transition-all ${
+                      activeTab === "cart"
+                        ? "bg-black text-white"
+                        : "text-black/60 hover:text-black hover:bg-black/5"
+                    }`}
+                  >
+                    <ShoppingCart className="w-4 h-4" strokeWidth={1.5} />
+                    MY CART
+                    {cartItems.length > 0 && (
+                      <span className="ml-auto bg-black text-white text-xs px-2 py-0.5 rounded-full">
+                        {cartItems.length}
+                      </span>
+                    )}
+                  </button>
+
+                  <button
                     onClick={() => setActiveTab("settings")}
                     className={`w-full flex items-center gap-3 px-4 py-3 text-sm tracking-wider transition-all ${
                       activeTab === "settings"
@@ -410,6 +466,120 @@ const Profile = () => {
                         </div>
                       ))}
                     </div>
+                  </div>
+                )}
+
+                {/* 🛒 Cart Tab */}
+                {activeTab === "cart" && (
+                  <div>
+                    <div className="flex items-center justify-between mb-8">
+                      <h2 className="text-2xl font-light tracking-[0.2em]">
+                        MY CART
+                      </h2>
+                      {cartItems.length > 0 && (
+                        <Link href="/cartPage">
+                          <button className="text-sm text-black hover:underline">
+                            View Full Cart →
+                          </button>
+                        </Link>
+                      )}
+                    </div>
+
+                    {cartItems.length === 0 ? (
+                      <div className="text-center py-16">
+                        <ShoppingCart
+                          className="w-16 h-16 mx-auto mb-4 text-black/20"
+                          strokeWidth={1}
+                        />
+                        <p className="text-sm tracking-wider text-black/60 mb-6">
+                          YOUR CART IS EMPTY
+                        </p>
+                        <Link href="/shop">
+                          <button className="bg-black text-white px-8 py-3 text-sm tracking-[0.2em] hover:bg-black/80 transition-all">
+                            CONTINUE SHOPPING
+                          </button>
+                        </Link>
+                      </div>
+                    ) : (
+                      <div className="space-y-6">
+                        {/* Cart Items */}
+                        <div className="space-y-4">
+                          {cartItems.map((item, index) => (
+                            <div
+                              key={`${item.id}-${item.size}-${item.color}-${index}`}
+                              className="flex gap-4 pb-4 border-b border-black/10"
+                            >
+                              <img
+                                src={item.image}
+                                alt={item.heading}
+                                className="w-20 h-20 object-cover"
+                              />
+                              <div className="flex-1">
+                                <h3 className="text-sm tracking-wide font-medium mb-1">
+                                  {item.heading}
+                                </h3>
+                                <p className="text-xs text-black/50 mb-2">
+                                  {item.color && (
+                                    <span>Color: {item.color}</span>
+                                  )}
+                                  {item.color && item.size && " | "}
+                                  {item.size && <span>Size: {item.size}</span>}
+                                </p>
+                                <div className="flex items-center gap-4">
+                                  <div className="flex items-center border border-black/20">
+                                    <button
+                                      onClick={() =>
+                                        handleQuantityChange(item, "decrement")
+                                      }
+                                      className="px-2 py-1 hover:bg-black/5 text-xs"
+                                    >
+                                      -
+                                    </button>
+                                    <span className="px-3 py-1 text-xs border-x border-black/20">
+                                      {item.quantity}
+                                    </span>
+                                    <button
+                                      onClick={() =>
+                                        handleQuantityChange(item, "increment")
+                                      }
+                                      className="px-2 py-1 hover:bg-black/5 text-xs"
+                                    >
+                                      +
+                                    </button>
+                                  </div>
+                                  <span className="text-sm font-medium">
+                                    ${(item.price * item.quantity).toFixed(2)}
+                                  </span>
+                                </div>
+                              </div>
+                              <button
+                                onClick={() => handleRemoveItem(item)}
+                                className="text-black/40 hover:text-red-500 transition-colors"
+                              >
+                                <X size={18} />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* Cart Summary */}
+                        <div className="pt-6 border-t border-black/10">
+                          <div className="flex justify-between items-center mb-4">
+                            <span className="text-sm tracking-wider text-black/60">
+                              SUBTOTAL
+                            </span>
+                            <span className="text-lg font-medium">
+                              ${cartSubtotal.toFixed(2)}
+                            </span>
+                          </div>
+                          <Link href="/checkout">
+                            <button className="w-full bg-black text-white py-3 text-sm tracking-[0.2em] hover:bg-black/80 transition-all">
+                              PROCEED TO CHECKOUT
+                            </button>
+                          </Link>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
 

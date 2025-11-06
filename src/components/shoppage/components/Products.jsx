@@ -41,7 +41,7 @@ const Products = () => {
         sorted.sort((a, b) => a.heading.localeCompare(b.heading));
         break;
       case "popularity":
-        sorted.sort(() => Math.random() - 0.5);
+        sorted.sort((a, b) => (b.popular ? 1 : 0) - (a.popular ? 1 : 0));
         break;
       case "latest":
         sorted.reverse();
@@ -79,7 +79,15 @@ const Products = () => {
     }));
   };
 
-  const SIZES = ["XS", "S", "M", "L", "XL"];
+  // Get available sizes for each product
+  const getAvailableSizes = (product) => {
+    // Only show sizes if product has sizes array with items
+    if (product.sizes && product.sizes.length > 0) {
+      return product.sizes;
+    }
+
+    return [];
+  };
 
   return (
     <div className="w-full py-12 md:py-20 bg-white">
@@ -118,13 +126,14 @@ const Products = () => {
                 ? product.colors
                 : [];
               const activeImg = activeImages[product.id] || product.image[0];
+              const availableSizes = getAvailableSizes(product);
 
               return (
                 <div key={product.id} className="flex flex-col items-center">
                   {/* Product Image */}
                   <Link
                     href={`/product/${product.id}`}
-                    className="w-full block mb-3"
+                    className="w-full block mb-3 relative group"
                   >
                     <Image
                       src={activeImg}
@@ -147,28 +156,30 @@ const Products = () => {
                   <p
                     className={`text-sm sm:text-base text-gray-600 font-semibold mb-3 ${montserrat.className}`}
                   >
-                    ${product.price}
+                    ${product.price.toFixed(2)}
                   </p>
 
-                  {/* Sizes */}
-                  <div className="flex items-center gap-1.5 sm:gap-2 mb-3">
-                    {SIZES.map((size) => {
-                      const isActive = selectedSizes[product.id] === size;
-                      return (
-                        <button
-                          key={size}
-                          onClick={() => handleSizeClick(product.id, size)}
-                          className={`px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm rounded border transition-all ${
-                            isActive
-                              ? "border-black text-black font-semibold"
-                              : "border-gray-400 text-gray-700 hover:border-black"
-                          }`}
-                        >
-                          {size}
-                        </button>
-                      );
-                    })}
-                  </div>
+                  {/* Sizes - Only show if available */}
+                  {availableSizes.length > 0 && (
+                    <div className="flex items-center gap-1.5 sm:gap-2 mb-3 flex-wrap justify-center">
+                      {availableSizes.map((size) => {
+                        const isActive = selectedSizes[product.id] === size;
+                        return (
+                          <button
+                            key={size}
+                            onClick={() => handleSizeClick(product.id, size)}
+                            className={`px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm rounded border transition-all ${
+                              isActive
+                                ? "border-black text-black font-semibold"
+                                : "border-gray-400 text-gray-700 hover:border-black"
+                            }`}
+                          >
+                            {size}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
 
                   {/* Colors */}
                   <div className="flex items-center gap-3 min-h-[24px]">

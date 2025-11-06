@@ -4,6 +4,8 @@ import Footer from "@/components/footer/Footer";
 import HeaderController from "@/components/header/HeaderController";
 import { AuthContextProvider } from "@/context/AuthContext";
 import { Toaster } from "react-hot-toast";
+import ReduxProvider from "@/context/ReduxProvider";
+
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -23,15 +25,15 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        <AuthContextProvider>
-          <HeaderController />
-          {children}
-          <Footer />
-          <Toaster position="top-right" reverseOrder="false" />
-        </AuthContextProvider>
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+        <ReduxProvider>
+          <AuthContextProvider>
+            <HeaderController />
+            {children}
+            <Footer />
+            <Toaster position="top-right" reverseOrder={false} />
+          </AuthContextProvider>
+        </ReduxProvider>
       </body>
     </html>
   );

@@ -4,9 +4,12 @@ import { X, ChevronLeft, ChevronRight, SearchIcon } from "lucide-react";
 import initialProducts from "@/utils/products";
 import { useParams } from "next/navigation";
 import Link from "next/link";
+import { useDispatch } from "react-redux";
+import { addToCart } from "@/redux/cartSlice";
 
 const OneProduct = () => {
   const { id } = useParams();
+  const dispatch = useDispatch();
   const product = initialProducts.find((item) => item.id == id);
 
   if (!product) {
@@ -21,6 +24,9 @@ const OneProduct = () => {
   const [activeTab, setActiveTab] = useState("description");
   const [selectedColor, setSelectedColor] = useState(
     product.colors && product.colors.length > 0 ? product.colors[0].name : null
+  );
+  const [selectedSize, setSelectedSize] = useState(
+    product.sizes && product.sizes.length > 0 ? product.sizes[0] : null
   );
 
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
@@ -60,6 +66,21 @@ const OneProduct = () => {
     if (color.imgIndex !== undefined && thumbnails[color.imgIndex]) {
       setActiveImg(thumbnails[color.imgIndex]);
     }
+  };
+
+  // Add to cart handler
+  const handleAddToCart = () => {
+    const cartItem = {
+      id: product.id,
+      heading: product.heading,
+      price: product.price,
+      image: activeImg,
+      quantity: qty,
+      color: selectedColor,
+      size: selectedSize,
+    };
+    dispatch(addToCart(cartItem));
+    alert("Product added to cart!");
   };
 
   // Related products (same category, excluding current product)
@@ -175,6 +196,30 @@ const OneProduct = () => {
                 </div>
               )}
 
+              {/* Sizes - Only show if product has sizes */}
+              {product.sizes && product.sizes.length > 0 && (
+                <div className="mt-4">
+                  <h3 className="text-sm font-medium text-black/70 mb-2">
+                    Choose Size:
+                  </h3>
+                  <div className="flex items-center gap-3">
+                    {product.sizes.map((size) => (
+                      <button
+                        key={size}
+                        onClick={() => setSelectedSize(size)}
+                        className={`px-4 py-2 border-2 transition-all ${
+                          selectedSize === size
+                            ? "border-black bg-black text-white"
+                            : "border-gray-300 hover:border-black"
+                        }`}
+                      >
+                        {size}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Quantity + Add To Cart */}
               <div className="flex items-center gap-4 mt-5 mb-5">
                 <div className="flex border border-gray-300 select-none">
@@ -188,7 +233,10 @@ const OneProduct = () => {
                     +
                   </button>
                 </div>
-                <div className="border border-black px-6 py-2 cursor-pointer hover:bg-black hover:text-white transition">
+                <div
+                  onClick={handleAddToCart}
+                  className="border border-black px-6 py-2 cursor-pointer hover:bg-black hover:text-white transition"
+                >
                   Add To Cart
                 </div>
               </div>
@@ -258,22 +306,32 @@ const OneProduct = () => {
                 <div className="overflow-x-auto border border-gray-200 rounded-md w-full sm:w-3/4 md:w-2/3">
                   <table className="min-w-full border-collapse">
                     <tbody>
-                      <tr className="border-b border-gray-200">
-                        <th className="text-left p-3 font-semibold w-1/4">
-                          Size
-                        </th>
-                        <td className="p-3 text-gray-700">
-                          Medium, Large, Extra Large
-                        </td>
-                      </tr>
-                      <tr>
-                        <th className="text-left p-3 font-semibold">Color</th>
-                        <td className="p-3 text-gray-700">
-                          {product.colors && product.colors.length > 0
-                            ? product.colors.map((c) => c.name).join(", ")
-                            : "N/A"}
-                        </td>
-                      </tr>
+                      {product.sizes && product.sizes.length > 0 && (
+                        <tr className="border-b border-gray-200">
+                          <th className="text-left p-3 font-semibold w-1/4">
+                            Size
+                          </th>
+                          <td className="p-3 text-gray-700">
+                            {product.sizes.join(", ")}
+                          </td>
+                        </tr>
+                      )}
+                      {product.colors && product.colors.length > 0 && (
+                        <tr>
+                          <th className="text-left p-3 font-semibold">Color</th>
+                          <td className="p-3 text-gray-700">
+                            {product.colors.map((c) => c.name).join(", ")}
+                          </td>
+                        </tr>
+                      )}
+                      {(!product.sizes || product.sizes.length === 0) &&
+                        (!product.colors || product.colors.length === 0) && (
+                          <tr>
+                            <td colSpan="2" className="p-3 text-gray-500 text-center">
+                              No additional information available
+                            </td>
+                          </tr>
+                        )}
                     </tbody>
                   </table>
                 </div>
@@ -285,7 +343,7 @@ const OneProduct = () => {
                 <p className="text-gray-600 mb-5">There are no reviews yet.</p>
                 <h3 className="font-semibold text-xl mb-4">
                   Be the first to review{" "}
-                  <span className="italic">“{product.heading}”</span>
+                  <span className="italic">"{product.heading}"</span>
                 </h3>
                 <p className="text-md text-gray-500 mb-4">
                   Your email address will not be published. Required fields are
