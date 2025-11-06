@@ -1,9 +1,17 @@
 "use client";
 import React, { useState, useContext } from "react";
+import { useDispatch } from "react-redux";
+import {
+  setUserId,
+  setCart,
+  clearCart,
+  initializeCart,
+} from "@/redux/cartSlice";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, ArrowLeft } from "lucide-react";
 import { AuthContext } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
+
 import toast from "react-hot-toast";
 
 const Loginpop = ({ open, onClose }) => {
@@ -18,6 +26,7 @@ const Loginpop = ({ open, onClose }) => {
   const router = useRouter();
   const { login, register, forgotPassword, resetPassword } =
     useContext(AuthContext);
+  const dispatch = useDispatch();
 
   // ✨ Toast
   const showLuxuryToast = (message, type = "success") => {
@@ -44,13 +53,22 @@ const Loginpop = ({ open, onClose }) => {
     };
 
     if (type === "success") {
-      toast.success(message, { duration: 3500, style: luxuryStyle, iconTheme: iconTheme.success, className: "luxury-toast" });
+      toast.success(message, {
+        duration: 3500,
+        style: luxuryStyle,
+        iconTheme: iconTheme.success,
+        className: "luxury-toast",
+      });
     } else {
-      toast.error(message, { duration: 4000, style: luxuryStyle, iconTheme: iconTheme.error, className: "luxury-toast" });
+      toast.error(message, {
+        duration: 4000,
+        style: luxuryStyle,
+        iconTheme: iconTheme.error,
+        className: "luxury-toast",
+      });
     }
   };
 
-  // ✅ Handle login/signup
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -64,9 +82,36 @@ const Loginpop = ({ open, onClose }) => {
         showLuxuryToast("Account created successfully", "success");
         setIsSignup(false);
       } else {
-        await login({ identifier: data.identifier, password: data.password });
+        // ✅ Login user
+        const response = await login({
+          identifier: data.identifier,
+          password: data.password,
+        });
+
+        // ✅ Get userId
+        const userId =
+          response?.userId || response?.user?.username || data.identifier;
+
+        // ✅ Save userId to localStorage
+        localStorage.setItem("userId", userId);
+
+        // ✅ Initialize cart (this will merge guest cart)
+        dispatch(initializeCart(userId));
+
         localStorage.removeItem("showLoginPopup");
-        showLuxuryToast("Welcome back", "success");
+
+        const guestCart = JSON.parse(
+          localStorage.getItem("cart_guest") || "[]"
+        );
+        if (guestCart.length > 0) {
+          showLuxuryToast(
+            "Welcome back! Your cart has been restored.",
+            "success"
+          );
+        } else {
+          showLuxuryToast("Welcome back!", "success");
+        }
+
         onClose();
         setTimeout(() => router.push("/profile"), 500);
       }
@@ -123,11 +168,24 @@ const Loginpop = ({ open, onClose }) => {
           animation: luxurySlideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
         }
         @keyframes luxurySlideIn {
-          from { transform: translateY(-100%) scale(0.95); opacity: 0; }
-          to { transform: translateY(0) scale(1); opacity: 1; }
+          from {
+            transform: translateY(-100%) scale(0.95);
+            opacity: 0;
+          }
+          to {
+            transform: translateY(0) scale(1);
+            opacity: 1;
+          }
         }
-        .luxury-toast > div { align-items: center !important; gap: 16px !important; }
-        .luxury-toast svg { width: 20px !important; height: 20px !important; stroke-width: 1.5 !important; }
+        .luxury-toast > div {
+          align-items: center !important;
+          gap: 16px !important;
+        }
+        .luxury-toast svg {
+          width: 20px !important;
+          height: 20px !important;
+          stroke-width: 1.5 !important;
+        }
       `}</style>
 
       <AnimatePresence>
@@ -175,30 +233,91 @@ const Loginpop = ({ open, onClose }) => {
                     <form onSubmit={handleSubmit} className="space-y-5 w-full ">
                       {isSignup && (
                         <>
-                          <input name="username" placeholder="USERNAME" required className="input px-3 py-2" />
+                          <input
+                            name="username"
+                            placeholder="USERNAME"
+                            required
+                            className="input px-3 py-2"
+                          />
                           <div className="grid grid-cols-2 gap-4">
-                            <input name="phone" placeholder="PHONE" required className="input px-3 py-2" />
-                            <input name="country" placeholder="COUNTRY" required className="input px-3 py-2" />
+                            <input
+                              name="phone"
+                              placeholder="PHONE"
+                              required
+                              className="input px-3 py-2"
+                            />
+                            <input
+                              name="country"
+                              placeholder="COUNTRY"
+                              required
+                              className="input px-3 py-2"
+                            />
                           </div>
-                          <input name="address" placeholder="ADDRESS" required className="input px-3 py-2" />
+                          <input
+                            name="address"
+                            placeholder="ADDRESS"
+                            required
+                            className="input px-3 py-2"
+                          />
                           <div className="grid grid-cols-2 gap-4">
-                            <input name="city" placeholder="CITY" required className="input px-3 py-2" />
-                            <input name="postalCode" placeholder="POSTAL CODE" required className="input px-3 py-2" />
+                            <input
+                              name="city"
+                              placeholder="CITY"
+                              required
+                              className="input px-3 py-2"
+                            />
+                            <input
+                              name="postalCode"
+                              placeholder="POSTAL CODE"
+                              required
+                              className="input px-3 py-2"
+                            />
                           </div>
-                          <input name="email" type="email" placeholder="EMAIL ADDRESS" required className="input px-3 py-2" />
-                          <input name="password" type="password" placeholder="PASSWORD" required className="input px-3 py-2" />
+                          <input
+                            name="email"
+                            type="email"
+                            placeholder="EMAIL ADDRESS"
+                            required
+                            className="input px-3 py-2"
+                          />
+                          <input
+                            name="password"
+                            type="password"
+                            placeholder="PASSWORD"
+                            required
+                            className="input px-3 py-2"
+                          />
                         </>
                       )}
 
                       {!isSignup && (
                         <>
-                          <input name="identifier" placeholder="Username or Email" required className="input px-3 py-2" />
-                          <input name="password" type="password" placeholder="PASSWORD" required className="input px-3 py-2" />
+                          <input
+                            name="identifier"
+                            placeholder="Username or Email"
+                            required
+                            className="input px-3 py-2"
+                          />
+                          <input
+                            name="password"
+                            type="password"
+                            placeholder="PASSWORD"
+                            required
+                            className="input px-3 py-2"
+                          />
                         </>
                       )}
 
-                      <button type="submit" disabled={loading} className="w-full bg-black text-white py-4 mt-8 font-light tracking-[0.3em] text-sm hover:bg-black/80 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed">
-                        {loading ? "PROCESSING..." : isSignup ? "CREATE ACCOUNT" : "SIGN IN"}
+                      <button
+                        type="submit"
+                        disabled={loading}
+                        className="w-full bg-black text-white py-4 mt-8 font-light tracking-[0.3em] text-sm hover:bg-black/80 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {loading
+                          ? "PROCESSING..."
+                          : isSignup
+                          ? "CREATE ACCOUNT"
+                          : "SIGN IN"}
                       </button>
                     </form>
 
@@ -208,7 +327,9 @@ const Loginpop = ({ open, onClose }) => {
                           <div className="w-full border-t border-black/10"></div>
                         </div>
                         <div className="relative flex justify-center text-xs">
-                          <span className="bg-white/90 px-4 text-black/40 tracking-wider">OR</span>
+                          <span className="bg-white/90 px-4 text-black/40 tracking-wider">
+                            OR
+                          </span>
                         </div>
                       </div>
 
@@ -216,7 +337,9 @@ const Loginpop = ({ open, onClose }) => {
                         onClick={() => setIsSignup(!isSignup)}
                         className="w-full text-center py-3 border border-black/20 text-xs tracking-[0.2em] text-black/70 hover:bg-black/5 hover:border-black/40 transition-all duration-300"
                       >
-                        {isSignup ? "ALREADY HAVE AN ACCOUNT?" : "CREATE NEW ACCOUNT"}
+                        {isSignup
+                          ? "ALREADY HAVE AN ACCOUNT?"
+                          : "CREATE NEW ACCOUNT"}
                       </button>
 
                       {!isSignup && (
@@ -233,24 +356,48 @@ const Loginpop = ({ open, onClose }) => {
 
                 {/* Forgot Password - Step 1: Email */}
                 {forgotStep === 1 && (
-                  <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.3 }}>
-                    <button onClick={resetToLogin} className="flex items-center gap-2 text-xs tracking-wider text-black/60 hover:text-black transition-colors mb-8">
+                  <motion.div
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <button
+                      onClick={resetToLogin}
+                      className="flex items-center gap-2 text-xs tracking-wider text-black/60 hover:text-black transition-colors mb-8"
+                    >
                       <ArrowLeft className="w-4 h-4" strokeWidth={1.5} />
                       BACK TO LOGIN
                     </button>
 
                     <div className="text-center mb-10">
-                      <h2 className="text-2xl font-light tracking-[0.25em] text-black mb-3">RESET PASSWORD</h2>
+                      <h2 className="text-2xl font-light tracking-[0.25em] text-black mb-3">
+                        RESET PASSWORD
+                      </h2>
                       <div className="w-16 h-[1px] bg-black/20 mx-auto"></div>
-                      <p className="text-xs tracking-[0.1em] text-black/50 mt-4">Enter your email to receive a reset code</p>
+                      <p className="text-xs tracking-[0.1em] text-black/50 mt-4">
+                        Enter your email to receive a reset code
+                      </p>
                     </div>
 
                     <div className="space-y-5">
-                      <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" placeholder="EMAIL ADDRESS" className="input w-full px-3 py-2" />
-                      <button onClick={handleForgotPassword} disabled={loading} className="w-full bg-black text-white py-4 text-sm tracking-[0.3em] hover:bg-black/80 transition-all duration-300 disabled:opacity-50">
+                      <input
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        type="email"
+                        placeholder="EMAIL ADDRESS"
+                        className="input w-full px-3 py-2"
+                      />
+                      <button
+                        onClick={handleForgotPassword}
+                        disabled={loading}
+                        className="w-full bg-black text-white py-4 text-sm tracking-[0.3em] hover:bg-black/80 transition-all duration-300 disabled:opacity-50"
+                      >
                         {loading ? "SENDING..." : "SEND RESET CODE"}
                       </button>
-                      <button onClick={() => setIsSignup(true)} className="w-full text-center py-3 border border-black/20 text-xs tracking-[0.2em] text-black/70 hover:bg-black/5 hover:border-black/40 transition-all duration-300">
+                      <button
+                        onClick={() => setIsSignup(true)}
+                        className="w-full text-center py-3 border border-black/20 text-xs tracking-[0.2em] text-black/70 hover:bg-black/5 hover:border-black/40 transition-all duration-300"
+                      >
                         CREATE NEW ACCOUNT
                       </button>
                     </div>
@@ -259,31 +406,60 @@ const Loginpop = ({ open, onClose }) => {
 
                 {/* Forgot Password - Step 2: Reset */}
                 {forgotStep === 2 && (
-                  <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.3 }}>
-                    <button onClick={resetToLogin} className="flex items-center gap-2 text-xs tracking-wider text-black/60 hover:text-black transition-colors mb-8">
+                  <motion.div
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <button
+                      onClick={resetToLogin}
+                      className="flex items-center gap-2 text-xs tracking-wider text-black/60 hover:text-black transition-colors mb-8"
+                    >
                       <ArrowLeft className="w-4 h-4" strokeWidth={1.5} />
                       BACK TO LOGIN
                     </button>
 
                     <div className="text-center mb-10">
-                      <h2 className="text-2xl font-light tracking-[0.25em] text-black mb-3">VERIFY & RESET</h2>
+                      <h2 className="text-2xl font-light tracking-[0.25em] text-black mb-3">
+                        VERIFY & RESET
+                      </h2>
                       <div className="w-16 h-[1px] bg-black/20 mx-auto"></div>
-                      <p className="text-xs tracking-[0.1em] text-black/50 mt-4">Enter the code sent to your email</p>
+                      <p className="text-xs tracking-[0.1em] text-black/50 mt-4">
+                        Enter the code sent to your email
+                      </p>
                     </div>
 
                     <div className="space-y-5">
-                      <input value={code} onChange={(e) => setCode(e.target.value)} type="text" placeholder="VERIFICATION CODE" className="input w-full px-3 py-2" />
-                      <input value={newPassword} onChange={(e) => setNewPassword(e.target.value)} type="password" placeholder="NEW PASSWORD" className="input w-full px-3 py-2" />
-                      <button onClick={handleResetPassword} disabled={loading} className="w-full bg-black text-white py-4 text-sm tracking-[0.3em] hover:bg-black/80 transition-all duration-300 disabled:opacity-50">
+                      <input
+                        value={code}
+                        onChange={(e) => setCode(e.target.value)}
+                        type="text"
+                        placeholder="VERIFICATION CODE"
+                        className="input w-full px-3 py-2"
+                      />
+                      <input
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        type="password"
+                        placeholder="NEW PASSWORD"
+                        className="input w-full px-3 py-2"
+                      />
+                      <button
+                        onClick={handleResetPassword}
+                        disabled={loading}
+                        className="w-full bg-black text-white py-4 text-sm tracking-[0.3em] hover:bg-black/80 transition-all duration-300 disabled:opacity-50"
+                      >
                         {loading ? "RESETTING..." : "RESET PASSWORD"}
                       </button>
-                      <button onClick={() => setIsSignup(true)} className="w-full text-center py-3 border border-black/20 text-xs tracking-[0.2em] text-black/70 hover:bg-black/5 hover:border-black/40 transition-all duration-300">
+                      <button
+                        onClick={() => setIsSignup(true)}
+                        className="w-full text-center py-3 border border-black/20 text-xs tracking-[0.2em] text-black/70 hover:bg-black/5 hover:border-black/40 transition-all duration-300"
+                      >
                         CREATE NEW ACCOUNT
                       </button>
                     </div>
                   </motion.div>
                 )}
-
               </div>
             </motion.div>
           </motion.div>

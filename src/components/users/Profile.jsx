@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import {
   User,
@@ -22,10 +22,16 @@ import {
   removeFromCart,
   updateCartItemQuantity,
   addToCart,
+  initializeCart,
+  logoutCart,
 } from "@/redux/cartSlice";
+
 import Link from "next/link";
 
+import { AuthContext } from "@/context/AuthContext";
+
 const Profile = () => {
+  const { logout } = useContext(AuthContext);
   const router = useRouter();
   const dispatch = useDispatch();
   const [activeTab, setActiveTab] = useState("information");
@@ -112,9 +118,10 @@ const Profile = () => {
     }
   };
 
-  // ✅ Fetch user data
   useEffect(() => {
     const token = localStorage.getItem("token");
+    const userId = localStorage.getItem("userId");
+
     if (!token) {
       router.push("/");
       return;
@@ -127,12 +134,17 @@ const Profile = () => {
       .then((res) => {
         setUserData(res.data.user);
         setEditData(res.data.user);
+
+        // ✅ Initialize cart with userId
+        if (userId) {
+          dispatch(initializeCart(userId));
+        }
       })
       .catch(() => {
         localStorage.clear();
         router.push("/");
       });
-  }, []);
+  }, [dispatch, router]);
 
   if (!userData) {
     return (
@@ -204,15 +216,18 @@ const Profile = () => {
     setIsEditing(false);
   };
 
-  // ✅ Logout
   const handleLogout = () => {
     setLoadingLogout(true);
     showLuxuryToast("Signing out...", "success");
+
     setTimeout(() => {
-      localStorage.clear();
-      localStorage.setItem("showLoginPopup", "true");
-      router.push("/");
-      window.location.reload();
+      // ✅ Clear guest cart and reset cart state
+      dispatch(logoutCart());
+
+      // ✅ Use context logout
+      logout();
+
+      setLoadingLogout(false);
     }, 700);
   };
 

@@ -26,7 +26,6 @@ const Product = () => {
 
   const handleColorClick = (productId, color) => {
     setSelectedColors((prev) => ({ ...prev, [productId]: color.name }));
-
     setActiveImages((prev) => ({
       ...prev,
       [productId]:
@@ -78,31 +77,35 @@ const Product = () => {
                   ${product.price}
                 </p>
 
-                {/* Sizes */}
-                <div className="flex items-center gap-2 mt-2">
-                  {["XS", "S", "M", "L", "XL"].map((size) => {
-                    const isActive = selectedSizes[product.id] === size;
-                    return (
-                      <button
-                        key={size}
-                        onClick={(e) => {
-                          e.preventDefault(); // prevent navigation when selecting size
-                          handleSizeClick(product.id, size);
-                        }}
-                        className={`px-3 py-1.5 text-sm rounded-sm border transition-all duration-200 ${
-                          isActive
-                            ? "border-black text-black font-semibold"
-                            : "border-gray-400 text-gray-800 hover:border-black"
-                        }`}
-                      >
-                        {size}
-                      </button>
-                    );
-                  })}
-                </div>
+                {/* Sizes — only show if product has sizes */}
+                {product.sizes && product.sizes.length > 0 ? (
+                  <div className="flex items-center gap-2 mt-2">
+                    {product.sizes.map((size) => {
+                      const isActive = selectedSizes[product.id] === size;
+                      return (
+                        <button
+                          key={size}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            handleSizeClick(product.id, size);
+                          }}
+                          className={`px-3 py-1.5 text-sm rounded-sm border transition-all duration-200 ${
+                            isActive
+                              ? "border-black text-black font-semibold"
+                              : "border-gray-400 text-gray-800 hover:border-black"
+                          }`}
+                        >
+                          {size}
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="h-8"></div> // empty space if no sizes
+                )}
 
-                {/* Colors */}
-                {product.colors?.length > 0 ? (
+                {/* Colors — only show if product has colors */}
+                {product.colors && product.colors.length > 0 ? (
                   <div className="flex items-center gap-4 mt-3">
                     {product.colors.map((color) => {
                       const isActive = selectedColors[product.id] === color.name;
@@ -110,7 +113,7 @@ const Product = () => {
                         <div
                           key={color.name}
                           onClick={(e) => {
-                            e.preventDefault(); // prevent navigation when selecting color
+                            e.preventDefault();
                             handleColorClick(product.id, color);
                           }}
                           className={`w-5 h-5 rounded-full border border-black/50 cursor-pointer transition-all duration-200 ${color.class} ${
@@ -123,7 +126,7 @@ const Product = () => {
                     })}
                   </div>
                 ) : (
-                  <div className="h-8"></div>
+                  <div className="h-8"></div> // empty space if no colors
                 )}
               </Link>
             );

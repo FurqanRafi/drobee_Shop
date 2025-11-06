@@ -25,7 +25,7 @@ const Popular = () => {
   const popularProducts = initialProducts.filter((p) => p.popular);
 
   const handleColorClick = (e, productId, color) => {
-    e.preventDefault(); // Prevent navigation when selecting color
+    e.preventDefault(); // Prevent navigation
     setSelectedColors((prev) => ({ ...prev, [productId]: color.name }));
 
     setActiveImages((prev) => ({
@@ -39,7 +39,7 @@ const Popular = () => {
   };
 
   const handleSizeClick = (e, productId, size) => {
-    e.preventDefault(); // Prevent navigation when selecting size
+    e.preventDefault();
     setSelectedSizes((prev) => ({ ...prev, [productId]: size }));
   };
 
@@ -61,7 +61,7 @@ const Popular = () => {
                 href={`/product/${product.id}`}
                 className="flex flex-col items-center justify-start cursor-pointer"
               >
-                {/* Image */}
+                {/* Product Image */}
                 <div className="w-full h-[420px] flex items-center justify-center overflow-hidden">
                   <Image
                     src={activeImg}
@@ -83,28 +83,32 @@ const Popular = () => {
                   ${product.price}
                 </p>
 
-                {/* Sizes */}
-                <div className="flex items-center gap-2 mt-2">
-                  {["XS", "S", "M", "L", "XL"].map((size) => {
-                    const isActive = selectedSizes[product.id] === size;
-                    return (
-                      <button
-                        key={size}
-                        onClick={(e) => handleSizeClick(e, product.id, size)}
-                        className={`px-3 py-1.5 text-sm rounded-sm border transition-all duration-200 ${
-                          isActive
-                            ? "border-black text-black font-semibold"
-                            : "border-gray-400 text-gray-800 hover:border-black"
-                        }`}
-                      >
-                        {size}
-                      </button>
-                    );
-                  })}
-                </div>
+                {/* Sizes Section */}
+                {product.sizes && product.sizes.length > 0 ? (
+                  <div className="flex items-center gap-2 mt-2">
+                    {product.sizes.map((size) => {
+                      const isActive = selectedSizes[product.id] === size;
+                      return (
+                        <button
+                          key={size}
+                          onClick={(e) => handleSizeClick(e, product.id, size)}
+                          className={`px-3 py-1.5 text-sm rounded-sm border transition-all duration-200 ${
+                            isActive
+                              ? "border-black text-black font-semibold"
+                              : "border-gray-400 text-gray-800 hover:border-black"
+                          }`}
+                        >
+                          {size}
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="h-9"></div> // Empty space if no sizes
+                )}
 
-             
-                {product.colors?.length > 0 ? (
+                {/* Colors Section */}
+                {product.colors && product.colors.length > 0 ? (
                   <div className="flex items-center gap-4 mt-3">
                     {product.colors.map((color) => {
                       const isActive =
@@ -123,7 +127,7 @@ const Popular = () => {
                     })}
                   </div>
                 ) : (
-                  <div className="h-8"></div>
+                  <div className="h-8"></div> // Empty space if no colors
                 )}
               </Link>
             );

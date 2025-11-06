@@ -4,7 +4,11 @@ import React, { useState } from "react";
 import { X } from "lucide-react";
 import Link from "next/link";
 import { useSelector, useDispatch } from "react-redux";
-import { removeFromCart, updateCartItemQuantity, addToCart } from "@/redux/cartSlice";
+import {
+  removeFromCart,
+  updateCartItemQuantity,
+  addToCart,
+} from "@/redux/cartSlice";
 
 const Cart = () => {
   const [couponCode, setCouponCode] = useState("");
@@ -22,11 +26,13 @@ const Cart = () => {
   };
 
   const handleRemoveItem = (item) => {
-    dispatch(removeFromCart({ 
-      id: item.id, 
-      size: item.size,
-      color: item.color 
-    }));
+    dispatch(
+      removeFromCart({
+        id: item.id,
+        size: item.size,
+        color: item.color,
+      })
+    );
   };
 
   const subtotal = cartItems.reduce(
@@ -86,9 +92,19 @@ const Cart = () => {
                         {item.heading}
                       </h3>
                       <p className="text-sm text-gray-500">
-                        {item.color && <span>Color: <span className="font-medium">{item.color}</span></span>}
+                        {item.color && (
+                          <span>
+                            Color:{" "}
+                            <span className="font-medium">{item.color}</span>
+                          </span>
+                        )}
                         {item.color && item.size && " | "}
-                        {item.size && <span>Size: <span className="font-medium">{item.size}</span></span>}
+                        {item.size && (
+                          <span>
+                            Size:{" "}
+                            <span className="font-medium">{item.size}</span>
+                          </span>
+                        )}
                       </p>
                     </div>
                   </div>
@@ -171,9 +187,21 @@ const Cart = () => {
                             {item.heading}
                           </h3>
                           <p className="text-sm text-gray-500">
-                            {item.color && <span>Color: <span className="font-medium">{item.color}</span></span>}
+                            {item.color && (
+                              <span>
+                                Color:{" "}
+                                <span className="font-medium">
+                                  {item.color}
+                                </span>
+                              </span>
+                            )}
                             {item.color && item.size && " | "}
-                            {item.size && <span>Size: <span className="font-medium">{item.size}</span></span>}
+                            {item.size && (
+                              <span>
+                                Size:{" "}
+                                <span className="font-medium">{item.size}</span>
+                              </span>
+                            )}
                           </p>
                         </div>
 

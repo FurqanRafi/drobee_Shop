@@ -8,25 +8,29 @@ export const AuthContext = createContext();
 export const AuthContextProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
+  const [showLoginPopup, setShowLoginPopup] = useState(false); // 👈 NEW
   const router = useRouter();
 
-  // ✅ Set default auth header
   useEffect(() => {
-    if (token) {
-      axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-    } else {
-      delete axios.defaults.headers.common["Authorization"];
-    }
-  }, [token]);
-
-  // ✅ Load auth data from localStorage
-  useEffect(() => {
+    // ✅ Load auth data from localStorage
     const storedUser = localStorage.getItem("user");
     const storedToken = localStorage.getItem("token");
+    const showPopupFlag = localStorage.getItem("showLoginPopup");
 
     if (storedUser && storedToken) {
       setUser(JSON.parse(storedUser));
       setToken(storedToken);
+
+      // ✅ Set axios default header
+      axios.defaults.headers.common["Authorization"] = `Bearer ${storedToken}`;
+    } else {
+      delete axios.defaults.headers.common["Authorization"];
+    }
+
+    // 👇 Show login popup if flag is set
+    if (showPopupFlag === "true") {
+      setShowLoginPopup(true);
+      localStorage.removeItem("showLoginPopup");
     }
   }, []);
 
@@ -63,12 +67,17 @@ export const AuthContextProvider = ({ children }) => {
     }
   };
 
-  // ✅ Logout
+  // ✅ Logout (keep cart intact)
   const logout = () => {
     setUser(null);
     setToken(null);
     localStorage.removeItem("user");
     localStorage.removeItem("token");
+
+    // 👇 trigger popup flag
+    localStorage.setItem("showLoginPopup", "true");
+    setShowLoginPopup(true); // instantly open popup
+
     router.push("/");
   };
 
@@ -195,6 +204,8 @@ export const AuthContextProvider = ({ children }) => {
         changeEmail,
         forgotPassword,
         resetPassword,
+        showLoginPopup,
+        setShowLoginPopup,
       }}
     >
       {children}
