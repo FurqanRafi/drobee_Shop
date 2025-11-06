@@ -3,11 +3,19 @@ import React, { useContext, useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
-import { MenuIcon, Search, ShoppingBagIcon, User, X } from "lucide-react";
+import {
+  MenuIcon,
+  Search,
+  ShoppingBagIcon,
+  ShoppingCart,
+  User,
+  X,
+} from "lucide-react";
 import { Montserrat } from "next/font/google";
 import Loginpop from "../users/Loginpop";
 import { AuthContext } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
+import { useSelector } from "react-redux"; // ✅ Import useSelector
 
 const montserrat = Montserrat({
   subsets: ["latin"],
@@ -21,7 +29,9 @@ const Header = () => {
   const router = useRouter();
   const { user } = useContext(AuthContext);
 
-  // ✅ Check login status on load (optional: if user stored in localStorage)
+  // ✅ Get cart items from Redux store
+  const cartItems = useSelector((state) => state.cart.cartItems);
+
   useEffect(() => {
     const isLoggedIn = localStorage.getItem("userLoggedIn");
     if (isLoggedIn && !user) {
@@ -31,19 +41,16 @@ const Header = () => {
 
   const handleUserClick = () => {
     if (user) {
-      // ✅ User logged in → Go to profile
       router.push("/profile");
     } else {
-      // ❌ Not logged in → Show login popup only once
       setLoginOpen(true);
     }
   };
 
-  // ✅ Close popup and mark user as logged in
   const handleLoginClose = () => {
     setLoginOpen(false);
     if (user) {
-      localStorage.setItem("userLoggedIn", "true"); // save login state
+      localStorage.setItem("userLoggedIn", "true");
     }
   };
 
@@ -139,8 +146,14 @@ const Header = () => {
               </motion.button>
             </div>
 
-            <Link href="/cartPage">
-              <ShoppingBagIcon className="w-5 h-5 cursor-pointer" />
+            {/* ✅ Cart Icon with Luxury Badge */}
+            <Link href="/cartPage" className="relative group">
+              <ShoppingCart className="w-5 h-5 cursor-pointer transition-colors duration-300" />
+              {cartItems?.length > 0 && (
+                <span className="absolute -top-2 -right-2 min-w-[18px] h-[18px] px-1 bg-white text-black text-[10px] flex items-center justify-center rounded-full font-light tracking-wider border border-white/30 shadow-lg">
+                  {cartItems.length}
+                </span>
+              )}
             </Link>
 
             {/* ✅ User icon logic */}
@@ -206,8 +219,14 @@ const Header = () => {
                     className="w-7 h-7 cursor-pointer"
                     onClick={handleUserClick}
                   />
-                  <Link href="/cartPage">
-                    <ShoppingBagIcon className="w-7 h-7 cursor-pointer" />
+                  {/* ✅ Mobile Cart with Badge */}
+                  <Link href="/cartPage" className="relative">
+                    <ShoppingCart className="w-7 h-7 cursor-pointer" />
+                    {cartItems?.length > 0 && (
+                      <span className="absolute -top-2 -right-2 min-w-[20px] h-[20px] px-1 bg-white text-black text-[11px] flex items-center justify-center rounded-full font-light tracking-wider border border-white/30 shadow-lg">
+                        {cartItems.length}
+                      </span>
+                    )}
                   </Link>
                 </div>
               </motion.div>

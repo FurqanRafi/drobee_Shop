@@ -7,12 +7,13 @@ import {
   MenuIcon,
   Search,
   ShoppingBagIcon,
+  ShoppingCart,
   User,
-  UserCircle,
   X,
 } from "lucide-react";
 import { Montserrat } from "next/font/google";
 import { useRouter, usePathname } from "next/navigation";
+import { useSelector } from "react-redux"; // ✅ Import useSelector
 import Loginpop from "../users/Loginpop";
 
 const montserrat = Montserrat({
@@ -28,6 +29,9 @@ const Header2 = () => {
   const [searchOpen, setSearchOpen] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  // ✅ Get cart items from Redux store
+  const cartItems = useSelector((state) => state.cart.cartItems);
 
   // ✅ Check if user is logged in
   useEffect(() => {
@@ -132,7 +136,7 @@ const Header2 = () => {
                 transition={{ duration: 0.35 }}
                 type="text"
                 placeholder="Search..."
-                className={`border border-white/30 rounded-full pl-10 pr-4 py-1 absolute right-0 bg-transparent text-black placeholder-white/40
+                className={`border border-black/30 rounded-full pl-10 pr-4 py-1 absolute right-0 bg-transparent text-black placeholder-black/40
                   ${
                     searchOpen ? "pointer-events-auto" : "pointer-events-none"
                   }`}
@@ -148,8 +152,15 @@ const Header2 = () => {
                 <Search className="w-5 h-5 cursor-pointer" />
               </motion.button>
             </div>
-            <Link href="/cartPage">
-              <ShoppingBagIcon className="w-5 h-5 cursor-pointer" />
+
+            {/* ✅ Cart Icon with Luxury Badge */}
+            <Link href="/cartPage" className="relative group">
+              <ShoppingCart className="w-5 h-5 cursor-pointer transition-colors duration-300" />
+              {cartItems?.length > 0 && (
+                <span className="absolute -top-2 -right-2 min-w-[18px] h-[18px] px-1 bg-black text-white text-[10px] flex items-center justify-center rounded-full font-light tracking-wider border border-black/20 shadow-lg">
+                  {cartItems.length}
+                </span>
+              )}
             </Link>
 
             {/* ✅ User Icon with Login/Profile Logic */}
@@ -219,8 +230,19 @@ const Header2 = () => {
                       handleUserClick();
                     }}
                   />
-                  <Link href="/cartPage">
-                    <ShoppingBagIcon className="w-7 h-7 cursor-pointer" />
+
+                  {/* ✅ Mobile Cart with Badge */}
+                  <Link
+                    href="/cartPage"
+                    className="relative"
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    <ShoppingCart className="w-7 h-7 cursor-pointer" />
+                    {cartItems?.length > 0 && (
+                      <span className="absolute -top-2 -right-2 min-w-[20px] h-[20px] px-1 bg-white text-black text-[11px] flex items-center justify-center rounded-full font-light tracking-wider border border-white/30 shadow-lg">
+                        {cartItems.length}
+                      </span>
+                    )}
                   </Link>
                 </div>
               </motion.div>
