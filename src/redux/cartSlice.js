@@ -83,8 +83,8 @@ const cartSlice = createSlice({
         // ✅ Save merged cart to user's localStorage
         saveCart(userId, mergedCart);
 
-        // ✅ Clear guest cart after merging
-        clearGuestCart();
+        // // ✅ Clear guest cart after merging
+        // clearGuestCart();
       } else {
         // ✅ Load guest cart
         state.cartItems = getStoredCart(null);
@@ -147,14 +147,8 @@ const cartSlice = createSlice({
 
     // ✅ Logout: Clear guest cart and reset to guest mode
     logoutCart: (state) => {
-      // Save user cart before logout
-      saveCart(state.userId, state.cartItems);
-
-      // Reset to guest mode
       state.userId = null;
-
-      // Load guest cart (keep old guest items)
-      state.cartItems = getStoredCart(null);
+      state.cartItems = JSON.parse(localStorage.getItem("cart_guest")) || [];
     },
   },
 });

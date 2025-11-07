@@ -215,17 +215,41 @@ const Profile = () => {
     setEditData(userData);
     setIsEditing(false);
   };
-
   const handleLogout = () => {
     setLoadingLogout(true);
     showLuxuryToast("Signing out...", "success");
 
     setTimeout(() => {
-      // ✅ Clear guest cart and reset cart state
+      // ✅ 1. Get current state before clearing
+      const currentUserId = localStorage.getItem("userId");
+      const currentCart = JSON.parse(
+        localStorage.getItem(`cart_${currentUserId}`)
+      );
+
+      // ✅ 2. Save current user cart safely
+      if (currentUserId && currentCart) {
+        localStorage.setItem(
+          `cart_${currentUserId}`,
+          JSON.stringify(currentCart)
+        );
+      }
+
+      // ✅ 3. Reset Redux to guest mode
       dispatch(logoutCart());
 
-      // ✅ Use context logout
+      // ✅ 4. Load guest cart instantly
+      const guestCart = JSON.parse(localStorage.getItem("cart_guest")) || [];
+      dispatch({ type: "cart/setCart", payload: guestCart });
+
+      // ✅ 5. Remove user info (token, id)
+      localStorage.removeItem("token");
+      localStorage.removeItem("userId");
+
+      // ✅ 6. Use context logout
       logout();
+
+      // ✅ 7. Optional: reload to refresh cart view
+      // window.location.reload();
 
       setLoadingLogout(false);
     }, 700);
