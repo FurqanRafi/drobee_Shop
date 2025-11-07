@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
@@ -15,6 +15,7 @@ import { Montserrat } from "next/font/google";
 import { useRouter, usePathname } from "next/navigation";
 import { useSelector } from "react-redux"; // ✅ Import useSelector
 import Loginpop from "../users/Loginpop";
+import { AuthContext } from "@/context/AuthContext";
 
 const montserrat = Montserrat({
   subsets: ["latin"],
@@ -28,16 +29,11 @@ const Header2 = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   // ✅ Get cart items from Redux store
   const cartItems = useSelector((state) => state.cart.cartItems);
-
-  // ✅ Check if user is logged in
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    setIsLoggedIn(!!token);
-  }, []);
+  const { token } = useContext(AuthContext);
+  const isLoggedIn = !!token;
 
   // ✅ Handle user icon click
   const handleUserClick = () => {
