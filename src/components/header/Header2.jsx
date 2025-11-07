@@ -149,7 +149,7 @@ const Header2 = () => {
                 animate={{ rotate: searchOpen ? 45 : 0 }}
                 transition={{ duration: 0.3 }}
               >
-                <Search className="w-5 h-5 cursor-pointer" />
+                <Search className="w-5 h-5 cursor-pointer text-black" />
               </motion.button>
             </div>
 
