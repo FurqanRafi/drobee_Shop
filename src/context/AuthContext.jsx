@@ -11,6 +11,8 @@ export const AuthContextProvider = ({ children }) => {
   const [showLoginPopup, setShowLoginPopup] = useState(false); // 👈 NEW
   const router = useRouter();
 
+  const API_URL = "https://drobee-backend.vercel.app/api";
+
   useEffect(() => {
     // ✅ Load auth data from localStorage
     const storedUser = localStorage.getItem("user");
@@ -32,15 +34,14 @@ export const AuthContextProvider = ({ children }) => {
       setShowLoginPopup(true);
       localStorage.removeItem("showLoginPopup");
     }
+
+    getProducts();
   }, []);
 
   // ✅ Register
   const register = async (userData) => {
     try {
-      const res = await axios.post(
-        "https://drobee-backend.vercel.app/api/register",
-        userData
-      );
+      const res = await axios.post(`${API_URL}/register`, userData);
       return res.data;
     } catch (error) {
       throw error.response?.data || { message: "Registration failed" };
@@ -50,10 +51,7 @@ export const AuthContextProvider = ({ children }) => {
   // ✅ Login
   const login = async (credentials) => {
     try {
-      const res = await axios.post(
-        "https://drobee-backend.vercel.app/api/login",
-        credentials
-      );
+      const res = await axios.post(`${API_URL}/login`, credentials);
       const { user, token } = res.data;
 
       setUser(user);
@@ -84,9 +82,7 @@ export const AuthContextProvider = ({ children }) => {
   // ✅ Get Profile
   const getProfile = async () => {
     try {
-      const res = await axios.get(
-        "https://drobee-backend.vercel.app/api/profile"
-      );
+      const res = await axios.get(`${API_URL}/profile`);
       setUser(res.data.user);
       localStorage.setItem("user", JSON.stringify(res.data.user));
       return res.data.user;
@@ -98,10 +94,7 @@ export const AuthContextProvider = ({ children }) => {
   // ✅ Update Profile
   const updateProfile = async (updatedData) => {
     try {
-      const res = await axios.put(
-        "https://drobee-backend.vercel.app/api/profile/update",
-        updatedData
-      );
+      const res = await axios.put(`${API_URL}/profile/update`, updatedData);
       setUser(res.data.user);
       localStorage.setItem("user", JSON.stringify(res.data.user));
       return res.data;
@@ -113,9 +106,7 @@ export const AuthContextProvider = ({ children }) => {
   // ✅ Delete Profile
   const deleteProfile = async () => {
     try {
-      await axios.delete(
-        "https://drobee-backend.vercel.app/api/profile/delete"
-      );
+      await axios.delete(`${API_URL}/profile/delete`);
       logout();
     } catch (error) {
       throw error.response?.data || { message: "Failed to delete profile" };
@@ -125,13 +116,10 @@ export const AuthContextProvider = ({ children }) => {
   // ✅ Change Password
   const changePassword = async (oldPassword, newPassword) => {
     try {
-      const res = await axios.put(
-        "https://drobee-backend.vercel.app/api/profile/change-password",
-        {
-          oldPassword,
-          newPassword,
-        }
-      );
+      const res = await axios.put(`${API_URL}/profile/change-password`, {
+        oldPassword,
+        newPassword,
+      });
       return res.data;
     } catch (error) {
       throw error.response?.data || { message: "Password change failed" };
@@ -141,13 +129,10 @@ export const AuthContextProvider = ({ children }) => {
   // ✅ Change Email
   const changeEmail = async (newEmail, password) => {
     try {
-      const res = await axios.put(
-        "https://drobee-backend.vercel.app/api/profile/change-email",
-        {
-          newEmail,
-          password,
-        }
-      );
+      const res = await axios.put(`${API_URL}/profile/change-email`, {
+        newEmail,
+        password,
+      });
       setUser((prev) => ({ ...prev, email: newEmail }));
       localStorage.setItem(
         "user",
@@ -162,10 +147,7 @@ export const AuthContextProvider = ({ children }) => {
   // ✅ Forgot Password
   const forgotPassword = async (email) => {
     try {
-      const res = await axios.post(
-        "https://drobee-backend.vercel.app/api/forgot-password",
-        { email }
-      );
+      const res = await axios.post(`${API_URL}/forgot-password`, { email });
       return res.data;
     } catch (error) {
       throw error.response?.data || { message: "Failed to send reset code" };
@@ -175,17 +157,126 @@ export const AuthContextProvider = ({ children }) => {
   // ✅ Reset Password
   const resetPassword = async (email, code, newPassword) => {
     try {
-      const res = await axios.post(
-        "https://drobee-backend.vercel.app/api/reset-password",
-        {
-          email,
-          code,
-          newPassword,
-        }
-      );
+      const res = await axios.post(`${API_URL}/reset-password`, {
+        email,
+        code,
+        newPassword,
+      });
       return res.data;
     } catch (error) {
       throw error.response?.data || { message: "Password reset failed" };
+    }
+  };
+
+  // ✅ Get Products - Fixed according to schema
+  const getProducts = async () => {
+    try {
+      const response = await axios.get(`${API_URL}/products`);
+      console.log("Products fetched:", response.data);
+
+      // Backend returns { products: [...] }
+      return response.data.products || [];
+    } catch (error) {
+      console.error("Error fetching products:", error);
+      return [];
+    }
+  };
+
+  const getProductsById = async (id) => {
+    try {
+      const response = await axios.get(`${API_URL}/products/${id}`);
+      console.log("Raw product response:", response.data);
+
+      // Backend se jo bhi structure aaye, handle karo
+      let fetchedProduct = null;
+
+      if (response.data.product) {
+        fetchedProduct = response.data.product;
+      } else if (response.data) {
+        fetchedProduct = response.data;
+      }
+
+      if (!fetchedProduct) {
+        console.error("No product found in response");
+        return null;
+      }
+
+      // ✅ Product ko same format mein transform karo jaise Products page mein hai
+      const transformedProduct = {
+        _id: fetchedProduct._id,
+        id: fetchedProduct._id, // dono add karo for compatibility
+        heading: fetchedProduct.heading || "Untitled Product",
+        name: fetchedProduct.name || fetchedProduct.heading,
+        style: fetchedProduct.style || "",
+        category: fetchedProduct.category || "",
+        price: Number(fetchedProduct.price) || 0,
+        desc: fetchedProduct.desc || fetchedProduct.description || "",
+        description: fetchedProduct.description || fetchedProduct.desc || "",
+        maindesc: fetchedProduct.maindesc || fetchedProduct.description || "",
+        popular: Boolean(fetchedProduct.popular),
+        latest: Boolean(fetchedProduct.latest),
+        sale: Boolean(fetchedProduct.sale),
+
+        // First image
+        image:
+          fetchedProduct.images && fetchedProduct.images.length > 0
+            ? typeof fetchedProduct.images[0] === "string"
+              ? fetchedProduct.images[0]
+              : fetchedProduct.images[0].url || "/placeholder.png"
+            : "/placeholder.png",
+
+        // ✅ Images with color index
+        images: Array.isArray(fetchedProduct.images)
+          ? fetchedProduct.images.map((img) => {
+              if (typeof img === "string") {
+                return { url: img, colourIndex: null };
+              }
+              return {
+                url: img.url || img,
+                colourIndex:
+                  img.colour !== "" && img.colour != null
+                    ? parseInt(img.colour)
+                    : null,
+              };
+            })
+          : [],
+
+        // ✅ Colors array
+        colors: Array.isArray(fetchedProduct.colors)
+          ? fetchedProduct.colors.map((color) => ({
+              name: color.name || "Color",
+              hex: color.hex || null,
+            }))
+          : [],
+
+        // ✅ Sizes array
+        sizes: Array.isArray(fetchedProduct.sizes)
+          ? fetchedProduct.sizes.map((s) => ({
+              label: typeof s === "object" ? s.label : s,
+              price:
+                typeof s === "object" && s.price
+                  ? Number(s.price)
+                  : Number(fetchedProduct.price),
+            }))
+          : [],
+      };
+
+      console.log("✅ Transformed product:", transformedProduct);
+      return transformedProduct;
+    } catch (error) {
+      console.error("Error fetching product:", error);
+      return null;
+    }
+  };
+
+  const getAllCategories = async () => {
+    try {
+      const response = await axios.get(`${API_URL}/categories`);
+      console.log("Categories fetched:", response.data);
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching categories:", error);
+      return [];
     }
   };
 
@@ -206,6 +297,10 @@ export const AuthContextProvider = ({ children }) => {
         resetPassword,
         showLoginPopup,
         setShowLoginPopup,
+
+        getProducts,
+        getProductsById,
+        getAllCategories,
       }}
     >
       {children}

@@ -100,7 +100,7 @@ const initialProducts = [
     price: 109.99,
     popular: false,
     colors: [],
-    sizes: [], // Not popular
+    sizes: [], 
   },
   {
     id: 7,
