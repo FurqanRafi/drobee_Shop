@@ -38,8 +38,10 @@ const Product = () => {
         const productsArray = Array.isArray(data) ? data : [];
 
         // ✅ Filter non-popular products and transform according to schema
+        // ✅ Filter only latest products and show maximum 4
         const newest = productsArray
-          .filter((p) => p.popular !== true) // Exclude popular products
+          .filter((p) => p.latest === true) // Only products marked as latest
+          .slice(0, 4) // Show only 4
           .map((p) => {
             // Get first image
             let firstImage = "/placeholder.jpg";
