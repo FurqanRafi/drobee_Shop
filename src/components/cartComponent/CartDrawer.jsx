@@ -7,7 +7,7 @@ import Link from "next/link";
 
 const CartDrawer = ({ isOpen, setIsOpen }) => {
   const dispatch = useDispatch();
-  
+
   // ✅ Get cart from Redux
   const cartItems = useSelector((state) => state.cart.cartItems);
 
@@ -20,11 +20,13 @@ const CartDrawer = ({ isOpen, setIsOpen }) => {
   };
 
   const handleRemoveItem = (item) => {
-    dispatch(removeFromCart({
-      id: item.id,
-      size: item.size,
-      color: item.color,
-    }));
+    dispatch(
+      removeFromCart({
+        id: item.id,
+        size: item.size,
+        color: item.color,
+      })
+    );
   };
 
   const subtotal = cartItems.reduce(
@@ -99,14 +101,14 @@ const CartDrawer = ({ isOpen, setIsOpen }) => {
       {/* Drawer Overlay */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black/40 backdrop-blur-md z-[998] overlay-enter"
+          className="fixed inset-0 bg-black/40 backdrop-blur-md z-998 overlay-enter"
           onClick={() => setIsOpen(false)}
         />
       )}
 
       {/* Cart Drawer */}
       {isOpen && (
-        <div className="fixed inset-y-0 right-0 w-full md:w-[30%] bg-white/95 backdrop-blur-xl shadow-2xl z-[999] drawer-enter flex flex-col">
+        <div className="fixed inset-y-0 right-0 w-full md:w-[30%] bg-white/95 backdrop-blur-xl shadow-2xl z-999 drawer-enter flex flex-col">
           {/* Drawer Header */}
           <div className="relative border-b border-black/10 p-6">
             <button
@@ -123,8 +125,8 @@ const CartDrawer = ({ isOpen, setIsOpen }) => {
                   CART
                 </h2>
               </div>
-              <div className="w-10 h-[1px] bg-black/20"></div>
-              <p className="text-xs tracking-[0.1em] text-black/40 mt-2">
+              <div className="w-10 h-px bg-black/20"></div>
+              <p className="text-xs tracking-widest text-black/40 mt-2">
                 {cartItems.length} {cartItems.length === 1 ? "ITEM" : "ITEMS"}
               </p>
             </div>
@@ -150,7 +152,7 @@ const CartDrawer = ({ isOpen, setIsOpen }) => {
                     className="flex gap-3 p-3 border border-black/10 cart-item-hover"
                   >
                     {/* Product Image */}
-                    <div className="w-20 h-24 bg-gray-100 flex-shrink-0 overflow-hidden">
+                    <div className="w-20 h-24 bg-gray-100 shrink-0 overflow-hidden">
                       <img
                         src={item.image}
                         alt={item.heading}
@@ -195,7 +197,7 @@ const CartDrawer = ({ isOpen, setIsOpen }) => {
                         </div>
 
                         <div className="flex items-center gap-2">
-                          <p className="text-xs tracking-[0.1em] font-light text-black">
+                          <p className="text-xs tracking-wider font-light text-black">
                             ${(item.price * item.quantity).toFixed(2)}
                           </p>
                           <button
@@ -235,7 +237,7 @@ const CartDrawer = ({ isOpen, setIsOpen }) => {
                   <span>SHIPPING</span>
                   <span>{shipping === 0 ? "FREE" : `$${shipping}`}</span>
                 </div>
-                <div className="w-full h-[1px] bg-black/10"></div>
+                <div className="w-full h-px bg-black/10"></div>
                 <div className="flex justify-between text-sm tracking-[0.15em] font-light text-black">
                   <span>TOTAL</span>
                   <span>${total.toFixed(2)}</span>

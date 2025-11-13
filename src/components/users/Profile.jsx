@@ -366,7 +366,7 @@ const Profile = () => {
             <h1 className="text-4xl font-light tracking-[0.3em] text-black mb-3">
               MY ACCOUNT
             </h1>
-            <div className="w-16 h-[1px] bg-black/20 mx-auto"></div>
+            <div className="w-16 h-px bg-black/20 mx-auto"></div>
           </div>
 
           <div className="flex flex-col lg:flex-row gap-8">

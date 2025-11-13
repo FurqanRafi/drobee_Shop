@@ -25,7 +25,7 @@ const OneProduct = () => {
   const [activeTab, setActiveTab] = useState("description");
   const [selectedColor, setSelectedColor] = useState(null);
   const [selectedSize, setSelectedSize] = useState(null);
-  const [selectedSizeIndex, setSelectedSizeIndex] = useState(0); // ✅ Size INDEX track karo
+  const [selectedSizeIndex, setSelectedSizeIndex] = useState(0);
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const mainImgRef = useRef();
@@ -38,11 +38,7 @@ const OneProduct = () => {
       try {
         setLoading(true);
 
-        console.log("🔍 Fetching product with ID:", id);
-
         const fetchedProduct = await getProductsById(id);
-
-        console.log("✅ Fetched product:", fetchedProduct);
 
         if (!fetchedProduct) {
           console.error("❌ No product found for ID:", id);
@@ -55,16 +51,13 @@ const OneProduct = () => {
         const firstImage = fetchedProduct.image || "/placeholder.png";
         setActiveImg(firstImage);
 
-        // ✅ Set initial color, size, and size index
         setSelectedColor(fetchedProduct.colors?.[0]?.name || null);
         setSelectedSize(
           fetchedProduct.sizes?.[0]?.label || fetchedProduct.sizes?.[0] || null
         );
-        setSelectedSizeIndex(0); // First size by default
+        setSelectedSizeIndex(0);
 
         const allProds = await getProducts();
-        console.log("📦 All products:", allProds.length);
-
         setAllProducts(allProds);
 
         const related = allProds.filter((p) => {
@@ -78,7 +71,6 @@ const OneProduct = () => {
           );
         });
 
-        console.log("🔗 Related products found:", related.length);
         setRelatedProducts(related.slice(0, 4));
       } catch (err) {
         console.error("❌ Error fetching data:", err);
@@ -88,7 +80,6 @@ const OneProduct = () => {
     };
 
     if (id) {
-      console.log("🚀 Starting fetch for ID:", id);
       fetchData();
     }
   }, [id, getProductsById, getProducts]);
@@ -123,7 +114,6 @@ const OneProduct = () => {
       ? [product.image]
       : ["/placeholder.png"];
 
-  // ✅ Calculate current price based on selected size
   const getCurrentPrice = () => {
     if (!product.sizes || product.sizes.length === 0) {
       return Number(product.price) || 0;
@@ -182,26 +172,23 @@ const OneProduct = () => {
     }
   };
 
-  // ✅ Size select karne pe price update ho
   const handleSizeSelect = (size, idx) => {
     const sizeLabel = typeof size === "object" ? size.label : size;
     setSelectedSize(sizeLabel);
     setSelectedSizeIndex(idx);
-    console.log("🎯 Size selected:", sizeLabel, "Price:", getCurrentPrice());
   };
 
   const handleAddToCart = () => {
     const cartItem = {
       id: product._id || product.id,
       heading: product.heading || product.name,
-      price: currentPrice, // ✅ Selected size ka price
+      price: currentPrice,
       image: activeImg,
       quantity: qty,
       color: selectedColor,
       size: selectedSize,
     };
 
-    console.log("🛒 Adding to cart:", cartItem);
     dispatch(addToCart(cartItem));
     setIsDrawerOpen(true);
   };

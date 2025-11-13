@@ -14,7 +14,6 @@ export const AuthContextProvider = ({ children }) => {
   const API_URL = "https://drobee-backend.vercel.app/api";
 
   useEffect(() => {
-    // ✅ Load auth data from localStorage
     const storedUser = localStorage.getItem("user");
     const storedToken = localStorage.getItem("token");
     const showPopupFlag = localStorage.getItem("showLoginPopup");
@@ -23,13 +22,11 @@ export const AuthContextProvider = ({ children }) => {
       setUser(JSON.parse(storedUser));
       setToken(storedToken);
 
-      // ✅ Set axios default header
       axios.defaults.headers.common["Authorization"] = `Bearer ${storedToken}`;
     } else {
       delete axios.defaults.headers.common["Authorization"];
     }
 
-    // 👇 Show login popup if flag is set
     if (showPopupFlag === "true") {
       setShowLoginPopup(true);
       localStorage.removeItem("showLoginPopup");
@@ -38,7 +35,6 @@ export const AuthContextProvider = ({ children }) => {
     getProducts();
   }, []);
 
-  // ✅ Register
   const register = async (userData) => {
     try {
       const res = await axios.post(`${API_URL}/register`, userData);
@@ -48,7 +44,6 @@ export const AuthContextProvider = ({ children }) => {
     }
   };
 
-  // ✅ Login
   const login = async (credentials) => {
     try {
       const res = await axios.post(`${API_URL}/login`, credentials);
@@ -65,21 +60,18 @@ export const AuthContextProvider = ({ children }) => {
     }
   };
 
-  // ✅ Logout (keep cart intact)
   const logout = () => {
     setUser(null);
     setToken(null);
     localStorage.removeItem("user");
     localStorage.removeItem("token");
 
-    // 👇 trigger popup flag
     localStorage.setItem("showLoginPopup", "true");
-    setShowLoginPopup(true); // instantly open popup
+    setShowLoginPopup(true);
 
     router.push("/");
   };
 
-  // ✅ Get Profile
   const getProfile = async () => {
     try {
       const res = await axios.get(`${API_URL}/profile`);
@@ -91,7 +83,6 @@ export const AuthContextProvider = ({ children }) => {
     }
   };
 
-  // ✅ Update Profile
   const updateProfile = async (updatedData) => {
     try {
       const res = await axios.put(`${API_URL}/profile/update`, updatedData);
@@ -103,7 +94,6 @@ export const AuthContextProvider = ({ children }) => {
     }
   };
 
-  // ✅ Delete Profile
   const deleteProfile = async () => {
     try {
       await axios.delete(`${API_URL}/profile/delete`);
@@ -113,7 +103,6 @@ export const AuthContextProvider = ({ children }) => {
     }
   };
 
-  // ✅ Change Password
   const changePassword = async (oldPassword, newPassword) => {
     try {
       const res = await axios.put(`${API_URL}/profile/change-password`, {
@@ -126,7 +115,6 @@ export const AuthContextProvider = ({ children }) => {
     }
   };
 
-  // ✅ Change Email
   const changeEmail = async (newEmail, password) => {
     try {
       const res = await axios.put(`${API_URL}/profile/change-email`, {
@@ -144,7 +132,6 @@ export const AuthContextProvider = ({ children }) => {
     }
   };
 
-  // ✅ Forgot Password
   const forgotPassword = async (email) => {
     try {
       const res = await axios.post(`${API_URL}/forgot-password`, { email });
@@ -154,7 +141,6 @@ export const AuthContextProvider = ({ children }) => {
     }
   };
 
-  // ✅ Reset Password
   const resetPassword = async (email, code, newPassword) => {
     try {
       const res = await axios.post(`${API_URL}/reset-password`, {
@@ -168,13 +154,9 @@ export const AuthContextProvider = ({ children }) => {
     }
   };
 
-  // ✅ Get Products - Fixed according to schema
   const getProducts = async () => {
     try {
       const response = await axios.get(`${API_URL}/products`);
-      console.log("Products fetched:", response.data);
-
-      // Backend returns { products: [...] }
       return response.data.products || [];
     } catch (error) {
       console.error("Error fetching products:", error);
@@ -185,9 +167,7 @@ export const AuthContextProvider = ({ children }) => {
   const getProductsById = async (id) => {
     try {
       const response = await axios.get(`${API_URL}/products/${id}`);
-      console.log("Raw product response:", response.data);
 
-      // Backend se jo bhi structure aaye, handle karo
       let fetchedProduct = null;
 
       if (response.data.product) {
@@ -201,10 +181,9 @@ export const AuthContextProvider = ({ children }) => {
         return null;
       }
 
-      // ✅ Product ko same format mein transform karo jaise Products page mein hai
       const transformedProduct = {
         _id: fetchedProduct._id,
-        id: fetchedProduct._id, // dono add karo for compatibility
+        id: fetchedProduct._id,
         heading: fetchedProduct.heading || "Untitled Product",
         name: fetchedProduct.name || fetchedProduct.heading,
         style: fetchedProduct.style || "",
@@ -217,7 +196,6 @@ export const AuthContextProvider = ({ children }) => {
         latest: Boolean(fetchedProduct.latest),
         sale: Boolean(fetchedProduct.sale),
 
-        // First image
         image:
           fetchedProduct.images && fetchedProduct.images.length > 0
             ? typeof fetchedProduct.images[0] === "string"
@@ -225,7 +203,6 @@ export const AuthContextProvider = ({ children }) => {
               : fetchedProduct.images[0].url || "/placeholder.png"
             : "/placeholder.png",
 
-        // ✅ Images with color index
         images: Array.isArray(fetchedProduct.images)
           ? fetchedProduct.images.map((img) => {
               if (typeof img === "string") {
@@ -241,7 +218,6 @@ export const AuthContextProvider = ({ children }) => {
             })
           : [],
 
-        // ✅ Colors array
         colors: Array.isArray(fetchedProduct.colors)
           ? fetchedProduct.colors.map((color) => ({
               name: color.name || "Color",
@@ -249,7 +225,6 @@ export const AuthContextProvider = ({ children }) => {
             }))
           : [],
 
-        // ✅ Sizes array
         sizes: Array.isArray(fetchedProduct.sizes)
           ? fetchedProduct.sizes.map((s) => ({
               label: typeof s === "object" ? s.label : s,
@@ -261,7 +236,6 @@ export const AuthContextProvider = ({ children }) => {
           : [],
       };
 
-      console.log("✅ Transformed product:", transformedProduct);
       return transformedProduct;
     } catch (error) {
       console.error("Error fetching product:", error);
@@ -272,11 +246,80 @@ export const AuthContextProvider = ({ children }) => {
   const getAllCategories = async () => {
     try {
       const response = await axios.get(`${API_URL}/categories`);
-      console.log("Categories fetched:", response.data);
       return response.data;
     } catch (error) {
       console.error("Error fetching categories:", error);
       return [];
+    }
+  };
+
+  const getshipping = async () => {
+    try {
+      const response = await axios.get(`${API_URL}/shipping`);
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching shipping:", error);
+      return [];
+    }
+  };
+
+  const createCheckout = async (
+    userData,
+    products,
+    totalAmount,
+    discount = 0
+  ) => {
+    try {
+      if (!userData) {
+        throw new Error("User data is required");
+      }
+
+      if (!products || !Array.isArray(products) || products.length === 0) {
+        throw new Error("Products array is required and must not be empty");
+      }
+
+      products.forEach((product, index) => {
+        if (!product.productName) {
+          throw new Error(`Product at index ${index} is missing productName`);
+        }
+        if (!product.image) {
+          throw new Error(`Product at index ${index} is missing image`);
+        }
+        if (product.price === undefined || product.price === null) {
+          throw new Error(`Product at index ${index} is missing price`);
+        }
+        if (!product.quantity) {
+          throw new Error(`Product at index ${index} is missing quantity`);
+        }
+      });
+
+      const checkoutData = {
+        user: {
+          email: userData.email,
+          firstname: userData.firstname,
+          lastname: userData.lastname,
+          country: userData.country,
+          address: userData.address,
+          city: userData.city,
+          state: userData.state,
+          postalCode: userData.postalCode,
+          phone: userData.phone,
+          shipping: userData.shipping,
+        },
+        products: products,
+        discount: Number(discount) || 0,
+        totalAmount: Number(totalAmount),
+      };
+
+      const response = await axios.post(`${API_URL}/checkout`, checkoutData);
+
+      return response.data;
+    } catch (error) {
+      console.error(
+        "❌ Error in createCheckout:",
+        error.response?.data || error.message
+      );
+      throw error;
     }
   };
 
@@ -301,6 +344,8 @@ export const AuthContextProvider = ({ children }) => {
         getProducts,
         getProductsById,
         getAllCategories,
+        getshipping,
+        createCheckout,
       }}
     >
       {children}

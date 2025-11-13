@@ -7,15 +7,12 @@ import Header from "./Header";
 export default function HeaderController() {
   const pathname = usePathname();
 
-  if (pathname.startsWith("/checkout")) {
-    return null;
-  }
-
   if (
     pathname.startsWith("/shop") ||
     pathname.startsWith("/product/") ||
     pathname.startsWith("/profile") ||
-    pathname.startsWith("/cartPage")
+    pathname.startsWith("/cartPage") ||
+    pathname.startsWith("/checkout")
   ) {
     return <Header2 />;
   } else {

@@ -32,11 +32,9 @@ const Products = () => {
       try {
         setLoading(true);
         const data = await getProducts();
-        console.log("Raw products data:", data);
 
         const transformedProducts = Array.isArray(data)
           ? data.map((p) => {
-              // Get first image
               let firstImage = "/placeholder.jpg";
 
               if (p.images && p.images.length > 0) {
@@ -50,13 +48,12 @@ const Products = () => {
                 id: p._id,
                 heading: p.heading || "Untitled Product",
                 style: p.style || "",
-                basePrice: Number(p.price) || 0, // ✅ Store base price
+                basePrice: Number(p.price) || 0,
                 popular: Boolean(p.popular),
                 latest: Boolean(p.latest),
                 sale: Boolean(p.sale),
                 image: firstImage,
 
-                // ✅ Store images with their color INDEX
                 images: Array.isArray(p.images)
                   ? p.images.map((img) => {
                       if (typeof img === "string") {
@@ -72,7 +69,6 @@ const Products = () => {
                     })
                   : [],
 
-                // ✅ Colors array
                 colors: Array.isArray(p.colors)
                   ? p.colors.map((color) => ({
                       name: color.name || "Color",
@@ -80,30 +76,25 @@ const Products = () => {
                     }))
                   : [],
 
-                // ✅ Sizes with prices
                 sizes: Array.isArray(p.sizes)
                   ? p.sizes.map((s) => ({
                       label: typeof s === "object" ? s.label : s,
-                      price: typeof s === "object" && s.price ? Number(s.price) : Number(p.price)
+                      price:
+                        typeof s === "object" && s.price
+                          ? Number(s.price)
+                          : Number(p.price),
                     }))
                   : [],
               };
             })
           : [];
 
-        console.log("✅ Transformed products:", transformedProducts);
-
-        // Debug first product's color-image mapping
         if (transformedProducts.length > 0) {
           const sample = transformedProducts[0];
-          console.log("📋 Sample Product Mapping:");
-          console.log("Colors:", sample.colors);
-          console.log("Images with color indices:", sample.images);
         }
 
         setProducts(transformedProducts);
 
-        // Set initial active images
         const initialImages = {};
         transformedProducts.forEach((p) => {
           initialImages[p.id] = p.image;
@@ -147,36 +138,24 @@ const Products = () => {
   };
 
   const handleColorClick = (productId, colorIndex) => {
-    console.log("🎨 Color clicked - Index:", colorIndex);
-
     setSelectedColors((prev) => ({
       ...prev,
       [productId]: colorIndex,
     }));
 
-    // ✅ Find image matching this color INDEX
     const product = products.find((p) => p.id === productId);
 
     if (product && product.images && product.images.length > 0) {
-      console.log("📦 Product images:", product.images);
-
-      // Find image where colourIndex matches the selected color index
       const matchingImage = product.images.find(
         (img) => img.colourIndex === colorIndex
       );
 
-      console.log("🔍 Looking for color index:", colorIndex);
-      console.log("✅ Found matching image:", matchingImage);
-
       if (matchingImage && matchingImage.url) {
-        console.log("🖼️ Switching to image:", matchingImage.url);
         setActiveImages((prev) => ({
           ...prev,
           [productId]: matchingImage.url,
         }));
       } else {
-        console.log("❌ No image found for color index:", colorIndex);
-        // Fallback to first image
         setActiveImages((prev) => ({
           ...prev,
           [productId]: product.image,
@@ -185,7 +164,6 @@ const Products = () => {
     }
   };
 
-  // ✅ Handle size click - store size INDEX
   const handleSizeClick = (productId, sizeIndex) => {
     setSelectedSizes((prev) => ({
       ...prev,
@@ -234,7 +212,6 @@ const Products = () => {
   return (
     <div className="w-full py-12 md:py-20 bg-white">
       <div className="MyContainer">
-        {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8 md:mb-10">
           <p
             className={`text-xs sm:text-sm italic font-medium text-gray-500 ${montserrat.className}`}
@@ -258,7 +235,6 @@ const Products = () => {
           </select>
         </div>
 
-        {/* Product Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8 lg:gap-10">
           {products.length > 0 ? (
             products.map((product) => {
@@ -266,15 +242,14 @@ const Products = () => {
               const availableSizes = product.sizes || [];
               const productColors = product.colors || [];
 
-              // ✅ Calculate displayed price based on selected size
               const selectedSizeIndex = selectedSizes[product.id];
-              const displayedPrice = selectedSizeIndex != null && availableSizes[selectedSizeIndex]
-                ? availableSizes[selectedSizeIndex].price
-                : product.basePrice;
+              const displayedPrice =
+                selectedSizeIndex != null && availableSizes[selectedSizeIndex]
+                  ? availableSizes[selectedSizeIndex].price
+                  : product.basePrice;
 
               return (
                 <div key={product.id} className="flex flex-col items-center">
-                  {/* Product Image */}
                   <Link
                     href={`/product/${product.id}`}
                     className="w-full block mb-3 relative group"
@@ -291,7 +266,6 @@ const Products = () => {
                     />
                   </Link>
 
-                  {/* Product Info */}
                   {product.style && (
                     <p className="text-xs sm:text-sm text-gray-400 mb-1">
                       {product.style}
@@ -302,15 +276,13 @@ const Products = () => {
                   >
                     {product.heading}
                   </h3>
-                  
-                  {/* ✅ Dynamic Price Display */}
+
                   <p
                     className={`text-sm sm:text-base text-gray-600 font-semibold mb-3 ${montserrat.className}`}
                   >
                     ${displayedPrice.toFixed(2)}
                   </p>
 
-                  {/* ✅ Sizes with INDEX-based selection */}
                   {availableSizes.length > 0 && (
                     <div className="flex items-center gap-1.5 sm:gap-2 mb-3 flex-wrap justify-center">
                       {availableSizes.map((size, idx) => {
@@ -332,7 +304,6 @@ const Products = () => {
                     </div>
                   )}
 
-                  {/* ✅ Colors - Pass INDEX to handler */}
                   {productColors.length > 0 && (
                     <div className="flex items-center gap-2.5 mt-2 flex-wrap justify-center">
                       {productColors.map((color, colorIndex) => {

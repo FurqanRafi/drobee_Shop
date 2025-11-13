@@ -69,6 +69,61 @@ const Loginpop = ({ open, onClose }) => {
     }
   };
 
+  // const handleSubmit = async (e) => {
+  //   e.preventDefault();
+  //   setLoading(true);
+
+  //   const formData = new FormData(e.target);
+  //   const data = Object.fromEntries(formData.entries());
+
+  //   try {
+  //     if (isSignup) {
+  //       await register(data);
+  //       showLuxuryToast("Account created successfully", "success");
+  //       setIsSignup(false);
+  //     } else {
+  //       // ✅ Login user
+  //       const response = await login({
+  //         identifier: data.identifier,
+  //         password: data.password,
+  //       });
+
+  //       // ✅ Get userId
+  //       const userId =
+  //         response?.userId || response?.user?.username || data.identifier;
+
+  //       // ✅ Save userId to localStorage
+  //       localStorage.setItem("userId", userId);
+
+  //       // ✅ Initialize cart (this will merge guest cart)
+  //       dispatch(initializeCart(userId));
+
+  //       localStorage.removeItem("showLoginPopup");
+
+  //       const guestCart = JSON.parse(
+  //         localStorage.getItem("cart_guest") || "[]"
+  //       );
+  //       if (guestCart.length > 0) {
+  //         showLuxuryToast(
+  //           "Welcome back! Your cart has been restored.",
+  //           "success"
+  //         );
+  //       } else {
+  //         showLuxuryToast("Welcome back!", "success");
+  //       }
+
+  //       onClose();
+  //       setTimeout(() => router.push("/profile"), 500);
+  //     }
+  //   } catch (error) {
+  //     showLuxuryToast(error?.message || "Authentication failed", "error");
+  //   }
+
+  //   setLoading(false);
+  // };
+
+  // ✅ Forgot password step 1
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -78,28 +133,34 @@ const Loginpop = ({ open, onClose }) => {
 
     try {
       if (isSignup) {
+        // Signup: backend me account create karo, localStorage me save nahi karna
         await register(data);
         showLuxuryToast("Account created successfully", "success");
         setIsSignup(false);
       } else {
-        // ✅ Login user
+        // Login: backend se poora user object lana
         const response = await login({
           identifier: data.identifier,
           password: data.password,
         });
 
-        // ✅ Get userId
-        const userId =
-          response?.userId || response?.user?.username || data.identifier;
+        const user = response.user; // backend se poora user object aa raha hona chahiye
+        if (!user) throw new Error("User data not found from backend");
 
-        // ✅ Save userId to localStorage
+        // ✅ Full user data localStorage me save
+        localStorage.setItem("userData", JSON.stringify(user));
+
+        // ✅ UserId alag save karo cart ke liye
+        const userId = user._id || user.username;
         localStorage.setItem("userId", userId);
 
-        // ✅ Initialize cart (this will merge guest cart)
+        // ✅ Initialize cart with userId
         dispatch(initializeCart(userId));
 
+        // ✅ Optional: remove login popup flag
         localStorage.removeItem("showLoginPopup");
 
+        // ✅ Show toast
         const guestCart = JSON.parse(
           localStorage.getItem("cart_guest") || "[]"
         );
@@ -122,7 +183,6 @@ const Loginpop = ({ open, onClose }) => {
     setLoading(false);
   };
 
-  // ✅ Forgot password step 1
   const handleForgotPassword = async () => {
     if (!email) return showLuxuryToast("Please enter your email", "error");
     setLoading(true);
@@ -194,7 +254,7 @@ const Loginpop = ({ open, onClose }) => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/40 backdrop-blur-md flex items-center justify-center z-[999] p-4"
+            className="fixed inset-0 bg-black/40 backdrop-blur-md flex items-center justify-center z-999 p-4"
           >
             <motion.div
               initial={{ scale: 0, opacity: 0, y: -10 }}
@@ -222,7 +282,7 @@ const Loginpop = ({ open, onClose }) => {
                       <h2 className="text-3xl font-light tracking-[0.25em] text-black mb-3">
                         {isSignup ? "CREATE ACCOUNT" : "WELCOME BACK"}
                       </h2>
-                      <div className="w-16 h-[1px] bg-black/20 mx-auto"></div>
+                      <div className="w-16 h-px bg-black/20 mx-auto"></div>
                       <p className="text-xs tracking-[0.15em] text-black/50 mt-3">
                         {isSignup
                           ? "JOIN OUR EXCLUSIVE COMMUNITY"
@@ -373,8 +433,8 @@ const Loginpop = ({ open, onClose }) => {
                       <h2 className="text-2xl font-light tracking-[0.25em] text-black mb-3">
                         RESET PASSWORD
                       </h2>
-                      <div className="w-16 h-[1px] bg-black/20 mx-auto"></div>
-                      <p className="text-xs tracking-[0.1em] text-black/50 mt-4">
+                      <div className="w-16 h-px bg-black/20 mx-auto"></div>
+                      <p className="text-xs tracking-widest text-black/50 mt-4">
                         Enter your email to receive a reset code
                       </p>
                     </div>
@@ -423,8 +483,8 @@ const Loginpop = ({ open, onClose }) => {
                       <h2 className="text-2xl font-light tracking-[0.25em] text-black mb-3">
                         VERIFY & RESET
                       </h2>
-                      <div className="w-16 h-[1px] bg-black/20 mx-auto"></div>
-                      <p className="text-xs tracking-[0.1em] text-black/50 mt-4">
+                      <div className="w-16 h-px bg-black/20 mx-auto"></div>
+                      <p className="text-xs tracking-widest text-black/50 mt-4">
                         Enter the code sent to your email
                       </p>
                     </div>
