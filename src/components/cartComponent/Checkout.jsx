@@ -333,7 +333,6 @@ const Checkout = () => {
         state: formData.state,
         postalCode: formData.postalCode.trim(),
         phone: formData.phone.trim(),
-        // ✅ Shipping method ka name save karo
         shipping: isFreeShipping
           ? "FREE SHIPPING"
           : selectedShipping?.name || "Standard Shipping",
@@ -355,11 +354,14 @@ const Checkout = () => {
         products,
         total,
         discount,
-        shippingCost // ✅ Add this parameter
+        shippingCost
       );
 
       if (response) {
         setSuccess(true);
+        // ✅ Clear cart after successful checkout
+        dispatch(clearCart());
+        console.log("✅ Cart cleared successfully after checkout");
       } else {
         setError("Failed to create checkout. Please try again.");
       }
@@ -832,7 +834,7 @@ const Checkout = () => {
                   <Lock size={18} />
                   {isSubmitting
                     ? "Processing..."
-                    : `Place Order $${total.toFixed(2)}`}
+                    : `Place Order ${total.toFixed(2)}`}
                 </button>
               </div>
             </div>
