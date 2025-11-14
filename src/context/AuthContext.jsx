@@ -267,58 +267,37 @@ export const AuthContextProvider = ({ children }) => {
     userData,
     products,
     totalAmount,
-    discount = 0
+    discount,
+    shippingCost
   ) => {
     try {
-      if (!userData) {
-        throw new Error("User data is required");
-      }
-
-      if (!products || !Array.isArray(products) || products.length === 0) {
-        throw new Error("Products array is required and must not be empty");
-      }
-
-      products.forEach((product, index) => {
-        if (!product.productName) {
-          throw new Error(`Product at index ${index} is missing productName`);
-        }
-        if (!product.image) {
-          throw new Error(`Product at index ${index} is missing image`);
-        }
-        if (product.price === undefined || product.price === null) {
-          throw new Error(`Product at index ${index} is missing price`);
-        }
-        if (!product.quantity) {
-          throw new Error(`Product at index ${index} is missing quantity`);
-        }
-      });
-
       const checkoutData = {
-        user: {
-          email: userData.email,
-          firstname: userData.firstname,
-          lastname: userData.lastname,
-          country: userData.country,
-          address: userData.address,
-          city: userData.city,
-          state: userData.state,
-          postalCode: userData.postalCode,
-          phone: userData.phone,
-          shipping: userData.shipping,
-        },
+        user: userData,
         products: products,
-        discount: Number(discount) || 0,
-        totalAmount: Number(totalAmount),
+        totalAmount: totalAmount,
+        discount: discount || 0,
+        shippingCost: shippingCost || 0, // ✅ Add shipping cost
+        paymentMethod: "Cash on Delivery",
+        status: "pending",
       };
 
-      const response = await axios.post(`${API_URL}/checkout`, checkoutData);
+      const res = await fetch(`${API_URL}/checkout`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(checkoutData),
+      });
 
-      return response.data;
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || "Failed to create checkout");
+      }
+
+      return data;
     } catch (error) {
-      console.error(
-        "❌ Error in createCheckout:",
-        error.response?.data || error.message
-      );
+      console.error("Create checkout error:", error);
       throw error;
     }
   };

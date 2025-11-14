@@ -333,29 +333,29 @@ const Checkout = () => {
         state: formData.state,
         postalCode: formData.postalCode.trim(),
         phone: formData.phone.trim(),
-        shipping: isFreeShipping ? "FREE SHIPPING" : selectedShipping.name,
+        // ✅ Shipping method ka name save karo
+        shipping: isFreeShipping
+          ? "FREE SHIPPING"
+          : selectedShipping?.name || "Standard Shipping",
       };
 
-      const products = cartItems.map((item) => {
-        return {
-          productName: item.heading || item.name || "Unknown Product",
+      const products = cartItems.map((item) => ({
+        productName: item.heading || item.name || "Unknown Product",
+        image: item.image || "/placeholder.png",
+        colour: item.color || "",
+        size: item.size || "",
+        quantity: Number(item.quantity) || 1,
+        price: Number(item.price) || 0,
+      }));
 
-          image: item.image || "/placeholder.png",
-
-          colour: item.color || "",
-
-          size: item.size || "",
-
-          quantity: Number(item.quantity) || 1,
-          price: Number(item.price) || 0,
-        };
-      });
+      const shippingCost = isFreeShipping ? 0 : selectedShipping?.price || 0;
 
       const response = await createCheckout(
         userData,
         products,
         total,
-        discount
+        discount,
+        shippingCost // ✅ Add this parameter
       );
 
       if (response) {
@@ -367,7 +367,6 @@ const Checkout = () => {
       console.error("❌ Checkout error:", error);
 
       if (error.response) {
-
         const errorMsg =
           error.response.data?.message || "Server error. Please try again.";
         setError(errorMsg);
