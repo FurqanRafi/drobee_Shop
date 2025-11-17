@@ -13,6 +13,7 @@ import {
   Save,
   X,
   ShoppingCart,
+  Package,
 } from "lucide-react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
@@ -20,18 +21,18 @@ import toast from "react-hot-toast";
 import { useSelector, useDispatch } from "react-redux";
 import {
   removeFromCart,
-  updateCartItemQuantity,
   addToCart,
   initializeCart,
   logoutCart,
 } from "@/redux/cartSlice";
-
 import Link from "next/link";
-
 import { AuthContext } from "@/context/AuthContext";
+import Orders from "@/components/MyOrders/Orders";
 
 const Profile = () => {
-  const { logout } = useContext(AuthContext);
+  const { logout, orders, loadingOrders, fetchUserOrders } =
+    useContext(AuthContext);
+
   const router = useRouter();
   const dispatch = useDispatch();
   const [activeTab, setActiveTab] = useState("information");
@@ -41,7 +42,6 @@ const Profile = () => {
   const [loadingSave, setLoadingSave] = useState(false);
   const [loadingLogout, setLoadingLogout] = useState(false);
 
-  // Get cart items from Redux
   const cartItems = useSelector((state) => state.cart.cartItems);
 
   const [passwordData, setPasswordData] = useState({
@@ -55,7 +55,6 @@ const Profile = () => {
     password: "",
   });
 
-  // ✨ Luxury Toast Configuration
   const showLuxuryToast = (message, type = "success") => {
     const luxuryStyle = {
       background: "linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)",
@@ -135,7 +134,6 @@ const Profile = () => {
         setUserData(res.data.user);
         setEditData(res.data.user);
 
-        // ✅ Initialize cart with userId
         if (userId) {
           dispatch(initializeCart(userId));
         }
@@ -157,7 +155,6 @@ const Profile = () => {
     );
   }
 
-  // Cart handlers
   const handleQuantityChange = (item, type) => {
     if (type === "increment") {
       dispatch(addToCart({ ...item, quantity: 1 }));
@@ -184,12 +181,10 @@ const Profile = () => {
     0
   );
 
-  // ✅ Input change
   const handleInputChange = (e) => {
     setEditData({ ...editData, [e.target.name]: e.target.value });
   };
 
-  // ✅ Save profile
   const handleSave = async () => {
     setLoadingSave(true);
     const token = localStorage.getItem("token");
@@ -210,23 +205,21 @@ const Profile = () => {
     setLoadingSave(false);
   };
 
-  // ✅ Cancel edit
   const handleCancel = () => {
     setEditData(userData);
     setIsEditing(false);
   };
+
   const handleLogout = () => {
     setLoadingLogout(true);
     showLuxuryToast("Signing out...", "success");
 
     setTimeout(() => {
-      // ✅ 1. Get current state before clearing
       const currentUserId = localStorage.getItem("userId");
       const currentCart = JSON.parse(
         localStorage.getItem(`cart_${currentUserId}`)
       );
 
-      // ✅ 2. Save current user cart safely
       if (currentUserId && currentCart) {
         localStorage.setItem(
           `cart_${currentUserId}`,
@@ -234,28 +227,20 @@ const Profile = () => {
         );
       }
 
-      // ✅ 3. Reset Redux to guest mode
       dispatch(logoutCart());
 
-      // ✅ 4. Load guest cart instantly
       const guestCart = JSON.parse(localStorage.getItem("cart_guest")) || [];
       dispatch({ type: "cart/setCart", payload: guestCart });
 
-      // ✅ 5. Remove user info (token, id)
       localStorage.removeItem("token");
       localStorage.removeItem("userId");
 
-      // ✅ 6. Use context logout
       logout();
-
-      // ✅ 7. Optional: reload to refresh cart view
-      // window.location.reload();
 
       setLoadingLogout(false);
     }, 700);
   };
 
-  // ✅ Change password
   const handlePasswordChange = async () => {
     if (passwordData.newPassword !== passwordData.confirmPassword) {
       showLuxuryToast("Passwords do not match", "error");
@@ -293,7 +278,6 @@ const Profile = () => {
       );
       showLuxuryToast("Email updated successfully", "success");
 
-      // ✅ Update userData & editData to reflect immediately
       setUserData((prev) => ({ ...prev, email: emailData.newEmail }));
       setEditData((prev) => ({ ...prev, email: emailData.newEmail }));
 
@@ -303,7 +287,6 @@ const Profile = () => {
     }
   };
 
-  // ✅ Delete account
   const handleDeleteAccount = async () => {
     if (
       !window.confirm(
@@ -387,6 +370,18 @@ const Profile = () => {
                   </button>
 
                   <button
+                    onClick={() => setActiveTab("orders")}
+                    className={`w-full flex items-center gap-3 px-4 py-3 text-sm tracking-wider transition-all ${
+                      activeTab === "orders"
+                        ? "bg-black text-white"
+                        : "text-black/60 hover:text-black hover:bg-black/5"
+                    }`}
+                  >
+                    <Package className="w-4 h-4" strokeWidth={1.5} />
+                    MY ORDERS
+                  </button>
+
+                  <button
                     onClick={() => setActiveTab("cart")}
                     className={`w-full flex items-center gap-3 px-4 py-3 text-sm tracking-wider transition-all ${
                       activeTab === "cart"
@@ -434,9 +429,13 @@ const Profile = () => {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3 }}
-                className="bg-white border border-black/10 p-8 md:p-12"
+                className={
+                  activeTab === "orders"
+                    ? ""
+                    : "bg-white border border-black/10 p-8 md:p-12"
+                }
               >
-                {/* 🧾 Information Tab */}
+                {/* Information Tab */}
                 {activeTab === "information" && (
                   <div>
                     <div className="flex items-center justify-between mb-8">
@@ -508,7 +507,16 @@ const Profile = () => {
                   </div>
                 )}
 
-                {/* 🛒 Cart Tab */}
+                {/* My Orders Tab */}
+                {activeTab === "orders" && (
+                  <Orders
+                    orders={orders}
+                    loadingOrders={loadingOrders}
+                    refreshOrders={fetchUserOrders}
+                  />
+                )}
+
+                {/* Cart Tab */}
                 {activeTab === "cart" && (
                   <div>
                     <div className="flex items-center justify-between mb-8">
@@ -541,7 +549,6 @@ const Profile = () => {
                       </div>
                     ) : (
                       <div className="space-y-6">
-                        {/* Cart Items */}
                         <div className="space-y-4">
                           {cartItems.map((item, index) => (
                             <div
@@ -601,7 +608,6 @@ const Profile = () => {
                           ))}
                         </div>
 
-                        {/* Cart Summary */}
                         <div className="pt-6 border-t border-black/10">
                           <div className="flex justify-between items-center mb-4">
                             <span className="text-sm tracking-wider text-black/60">
@@ -622,10 +628,9 @@ const Profile = () => {
                   </div>
                 )}
 
-                {/* ⚙️ Settings Tab */}
+                {/* Settings Tab */}
                 {activeTab === "settings" && (
                   <div className="space-y-10">
-                    {/* Change Password */}
                     <div>
                       <h3 className="text-lg tracking-wide flex items-center gap-2 mb-4">
                         <Lock size={18} /> CHANGE PASSWORD
@@ -663,7 +668,6 @@ const Profile = () => {
                       </button>
                     </div>
 
-                    {/* Change Email */}
                     <div>
                       <h3 className="text-lg tracking-wide flex items-center gap-2 mb-4">
                         <Mail size={18} /> CHANGE EMAIL
@@ -702,7 +706,6 @@ const Profile = () => {
                       </button>
                     </div>
 
-                    {/* Delete Account */}
                     <div className="pt-6 border-t border-black/10">
                       <h3 className="text-lg tracking-wide flex items-center gap-2 mb-3 text-black">
                         <Trash2 size={18} /> DELETE ACCOUNT

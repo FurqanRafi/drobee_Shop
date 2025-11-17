@@ -6,23 +6,41 @@ import { useRouter } from "next/navigation";
 export const AuthContext = createContext();
 
 export const AuthContextProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(
+    JSON.parse(localStorage.getItem("userData")) || null
+  );
   const [token, setToken] = useState(null);
-  const [showLoginPopup, setShowLoginPopup] = useState(false); // 👈 NEW
+  const [showLoginPopup, setShowLoginPopup] = useState(false);
+  const [orders, setOrders] = useState([]);
+  const [loadingOrders, setLoadingOrders] = useState(false);
   const router = useRouter();
 
-  const API_URL = "https://drobee-backend.vercel.app/api";
+  const API_URL = "http://localhost:5000/api";
 
+  // ✅ FIRST: Load user and token from localStorage
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
     const storedToken = localStorage.getItem("token");
     const showPopupFlag = localStorage.getItem("showLoginPopup");
 
-    if (storedUser && storedToken) {
-      setUser(JSON.parse(storedUser));
-      setToken(storedToken);
+    console.log("🔍 Checking localStorage...");
+    console.log("Stored User:", storedUser ? "exists" : "missing");
+    console.log("Stored Token:", storedToken ? "exists" : "missing");
 
-      axios.defaults.headers.common["Authorization"] = `Bearer ${storedToken}`;
+    if (storedUser && storedToken) {
+      try {
+        const parsedUser = JSON.parse(storedUser);
+        console.log("✅ Setting user from localStorage:", parsedUser);
+        setUser(parsedUser);
+        setToken(storedToken);
+        axios.defaults.headers.common[
+          "Authorization"
+        ] = `Bearer ${storedToken}`;
+      } catch (error) {
+        console.error("❌ Error parsing stored user:", error);
+        localStorage.removeItem("user");
+        localStorage.removeItem("token");
+      }
     } else {
       delete axios.defaults.headers.common["Authorization"];
     }
@@ -34,6 +52,21 @@ export const AuthContextProvider = ({ children }) => {
 
     getProducts();
   }, []);
+
+  // ✅ SECOND: Fetch orders when user AND token are ready
+  useEffect(() => {
+    if (user?.id && token) {
+      console.log("🚀 User and token ready, fetching orders...");
+      console.log("👤 User ID:", user?.id);
+      console.log("🔑 Token exists:", !!token);
+      fetchUserOrders();
+    } else {
+      console.log("⏳ Waiting for authentication...");
+      console.log("User:", user?.id ? "exists" : "missing");
+      console.log("Token:", token ? "exists" : "missing");
+      setOrders([]);
+    }
+  }, [user?.id, token]);
 
   const register = async (userData) => {
     try {
@@ -49,6 +82,8 @@ export const AuthContextProvider = ({ children }) => {
       const res = await axios.post(`${API_URL}/login`, credentials);
       const { user, token } = res.data;
 
+      console.log("✅ Login successful, setting user:", user);
+
       setUser(user);
       setToken(token);
       localStorage.setItem("user", JSON.stringify(user));
@@ -61,8 +96,10 @@ export const AuthContextProvider = ({ children }) => {
   };
 
   const logout = () => {
+    console.log("🚪 Logging out...");
     setUser(null);
     setToken(null);
+    setOrders([]);
     localStorage.removeItem("user");
     localStorage.removeItem("token");
 
@@ -75,9 +112,13 @@ export const AuthContextProvider = ({ children }) => {
   const getProfile = async () => {
     try {
       const res = await axios.get(`${API_URL}/profile`);
-      setUser(res.data.user);
-      localStorage.setItem("user", JSON.stringify(res.data.user));
-      return res.data.user;
+      const fetchedUser = res.data.user;
+
+      console.log("✅ Profile fetched:", fetchedUser);
+
+      setUser(fetchedUser);
+      localStorage.setItem("user", JSON.stringify(fetchedUser));
+      return fetchedUser;
     } catch (error) {
       throw error.response?.data || { message: "Failed to fetch profile" };
     }
@@ -272,11 +313,22 @@ export const AuthContextProvider = ({ children }) => {
   ) => {
     try {
       const checkoutData = {
-        user: userData,
-        products: products,
-        totalAmount: totalAmount,
+        billingDetails: {
+          firstname: userData.firstname,
+          lastname: userData.lastname,
+          email: userData.email,
+          phone: userData.phone,
+          address: userData.address,
+          country: userData.country,
+          state: userData.state,
+          city: userData.city,
+          postalCode: userData.postalCode,
+          shipping: userData.shipping,
+        },
+        products,
+        totalAmount,
         discount: discount || 0,
-        shippingCost: shippingCost || 0, // ✅ Add shipping cost
+        shippingCost: shippingCost || 0,
         paymentMethod: "Cash on Delivery",
         status: "pending",
       };
@@ -285,20 +337,84 @@ export const AuthContextProvider = ({ children }) => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(checkoutData),
       });
 
       const data = await res.json();
 
-      if (!res.ok) {
-        throw new Error(data.message || "Failed to create checkout");
+      // Refresh orders after checkout
+      if (user?.id) {
+        fetchUserOrders();
       }
 
       return data;
     } catch (error) {
       console.error("Create checkout error:", error);
       throw error;
+    }
+  };
+
+  const fetchUserOrders = async () => {
+    if (!user?.id) {
+      console.log("❌ Cannot fetch orders: No user ID");
+      return;
+    }
+
+    if (!token) {
+      console.log("❌ Cannot fetch orders: No token");
+      return;
+    }
+
+    try {
+      setLoadingOrders(true);
+      console.log("🔍 Fetching orders for user:", user.id);
+
+      const res = await axios.get(`${API_URL}/checkout/user/${user.id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const sortedOrders = Array.isArray(res.data)
+        ? res.data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+        : [];
+      console.log("✅ Orders response:", res);
+      setOrders(sortedOrders);
+    } catch (error) {
+      console.error(
+        "❌ Error fetching orders:",
+        error.response?.data || error.message
+      );
+      setOrders([]);
+    } finally {
+      setLoadingOrders(false);
+    }
+  };
+
+  const updateOrderStatus = async (orderId, status) => {
+    try {
+      await axios.put(
+        `${API_URL}/checkout/${orderId}`,
+        { status },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      // Update local state
+      setOrders((prev) =>
+        prev.map((order) =>
+          order._id === orderId ? { ...order, status } : order
+        )
+      );
+
+      return { success: true };
+    } catch (error) {
+      console.error("Error updating order:", error);
+      return { success: false, error };
     }
   };
 
@@ -325,6 +441,11 @@ export const AuthContextProvider = ({ children }) => {
         getAllCategories,
         getshipping,
         createCheckout,
+
+        orders,
+        loadingOrders,
+        fetchUserOrders,
+        updateOrderStatus,
       }}
     >
       {children}

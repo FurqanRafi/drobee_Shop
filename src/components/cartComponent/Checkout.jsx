@@ -136,7 +136,7 @@ const Checkout = () => {
 
   const cartItems = useSelector((state) => state.cart.cartItems);
 
-  const { createCheckout, getshipping } = useContext(AuthContext);
+  const { createCheckout, getshipping, user } = useContext(AuthContext);
 
   const [shippingMethods, setShippingMethods] = useState([]);
   const [selectedShipping, setSelectedShipping] = useState(null);
@@ -295,6 +295,7 @@ const Checkout = () => {
     setError("");
     setSuccess(false);
 
+    // Validation
     if (
       !formData.email ||
       !formData.firstname ||
@@ -321,10 +322,13 @@ const Checkout = () => {
     setIsSubmitting(true);
 
     try {
+      // ✅ FIXED: Always send logged-in user's _id
       const userData = {
-        email: formData.email.trim(),
+        _id: user?._id, // NOW this is correct logged-in user
         firstname: formData.firstname.trim(),
         lastname: formData.lastname.trim(),
+        email: formData.email.trim(),
+        phone: formData.phone.trim(),
         country: formData.country,
         address: formData.apartment
           ? `${formData.address.trim()}, ${formData.apartment.trim()}`
@@ -332,7 +336,6 @@ const Checkout = () => {
         city: formData.city,
         state: formData.state,
         postalCode: formData.postalCode.trim(),
-        phone: formData.phone.trim(),
         shipping: isFreeShipping
           ? "FREE SHIPPING"
           : selectedShipping?.name || "Standard Shipping",
@@ -359,7 +362,6 @@ const Checkout = () => {
 
       if (response) {
         setSuccess(true);
-        // ✅ Clear cart after successful checkout
         dispatch(clearCart());
         console.log("✅ Cart cleared successfully after checkout");
       } else {
@@ -435,7 +437,7 @@ const Checkout = () => {
       <div className="max-w-7xl mx-auto">
         {error && (
           <div className="mb-6 bg-red-50 border border-red-300 rounded-lg p-4 flex items-center gap-2">
-            <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0" />
+            <AlertCircle className="w-5 h-5 text-red-600 shrink-0" />
             <p className="text-sm text-red-700">{error}</p>
           </div>
         )}
