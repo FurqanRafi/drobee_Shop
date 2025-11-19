@@ -17,7 +17,6 @@ export const AuthContextProvider = ({ children }) => {
 
   const API_URL = "https://drobee-backend.vercel.app/api";
 
-  // ✅ FIRST: Load user and token from localStorage
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
     const storedToken = localStorage.getItem("token");
@@ -179,16 +178,34 @@ export const AuthContextProvider = ({ children }) => {
     }
   };
 
-  const getProducts = async () => {
+  const getProducts = async (page = 1, limit = 8, sort = "latest") => {
     try {
-      const response = await axios.get(`${API_URL}/products`);
-      return response.data.products || [];
+      const response = await axios.get(`${API_URL}/products`, {
+        params: {
+          page,
+          limit,
+          sort, // Backend sorting parameter
+        },
+      });
+
+      console.log("Products API Response:", response.data);
+
+      return {
+        products: response.data.products || [],
+        totalProducts: response.data.totalProducts || 0,
+        totalPages: response.data.totalPages || 1,
+        currentPage: response.data.currentPage || page,
+      };
     } catch (error) {
       console.error("Error fetching products:", error);
-      return [];
+      return {
+        products: [],
+        totalProducts: 0,
+        totalPages: 1,
+        currentPage: 1,
+      };
     }
   };
-
   const getProductsById = async (id) => {
     try {
       const response = await axios.get(`${API_URL}/products/${id}`);

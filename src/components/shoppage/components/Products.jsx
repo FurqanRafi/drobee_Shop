@@ -5,6 +5,7 @@ import { Montserrat, Playfair_Display } from "next/font/google";
 import Image from "next/image";
 import Link from "next/link";
 import { AuthContext } from "@/context/AuthContext";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 const playfair = Playfair_Display({
   subsets: ["latin"],
@@ -24,117 +25,142 @@ const Products = () => {
   const [loading, setLoading] = useState(true);
   const [selectedColors, setSelectedColors] = useState({});
   const [selectedSizes, setSelectedSizes] = useState({});
-  const [sortOption, setSortOption] = useState("default");
+  const [sortOption, setSortOption] = useState("latest");
   const [activeImages, setActiveImages] = useState({});
 
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalProducts, setTotalProducts] = useState(0);
+  const itemsPerPage = 8;
+
+  // Fetch products with pagination and sorting
+  const fetchProducts = async (page = 1, sort = "latest") => {
+    try {
+      setLoading(true);
+      const data = await getProducts(page, itemsPerPage, sort);
+
+      setTotalProducts(data.totalProducts || 0);
+      setTotalPages(data.totalPages || 1);
+      setCurrentPage(data.currentPage || page);
+
+      const transformedProducts = Array.isArray(data.products)
+        ? data.products.map((p) => {
+            let firstImage = "/placeholder.jpg";
+
+            if (p.images && p.images.length > 0) {
+              firstImage =
+                typeof p.images[0] === "string"
+                  ? p.images[0]
+                  : p.images[0].url || "/placeholder.jpg";
+            }
+
+            return {
+              id: p._id,
+              heading: p.heading || "Untitled Product",
+              style: p.style || "",
+              basePrice: Number(p.price) || 0,
+              popular: Boolean(p.popular),
+              latest: Boolean(p.latest),
+              sale: Boolean(p.sale),
+              image: firstImage,
+
+              images: Array.isArray(p.images)
+                ? p.images.map((img) => {
+                    if (typeof img === "string") {
+                      return { url: img, colourIndex: null };
+                    }
+                    return {
+                      url: img.url || img,
+                      colourIndex:
+                        img.colour !== "" && img.colour != null
+                          ? parseInt(img.colour)
+                          : null,
+                    };
+                  })
+                : [],
+
+              colors: Array.isArray(p.colors)
+                ? p.colors.map((color) => ({
+                    name: color.name || "Color",
+                    hex: color.hex || null,
+                  }))
+                : [],
+
+              sizes: Array.isArray(p.sizes)
+                ? p.sizes.map((s) => ({
+                    label: typeof s === "object" ? s.label : s,
+                    price:
+                      typeof s === "object" && s.price
+                        ? Number(s.price)
+                        : Number(p.price),
+                  }))
+                : [],
+            };
+          })
+        : [];
+
+      setProducts(transformedProducts);
+
+      const initialImages = {};
+      transformedProducts.forEach((p) => {
+        initialImages[p.id] = p.image;
+      });
+      setActiveImages(initialImages);
+    } catch (error) {
+      console.error("Error loading products:", error);
+      setProducts([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        setLoading(true);
-        const data = await getProducts();
+    fetchProducts(currentPage, sortOption);
+  }, [currentPage, sortOption]);
 
-        const transformedProducts = Array.isArray(data)
-          ? data.map((p) => {
-              let firstImage = "/placeholder.jpg";
-
-              if (p.images && p.images.length > 0) {
-                firstImage =
-                  typeof p.images[0] === "string"
-                    ? p.images[0]
-                    : p.images[0].url || "/placeholder.jpg";
-              }
-
-              return {
-                id: p._id,
-                heading: p.heading || "Untitled Product",
-                style: p.style || "",
-                basePrice: Number(p.price) || 0,
-                popular: Boolean(p.popular),
-                latest: Boolean(p.latest),
-                sale: Boolean(p.sale),
-                image: firstImage,
-
-                images: Array.isArray(p.images)
-                  ? p.images.map((img) => {
-                      if (typeof img === "string") {
-                        return { url: img, colourIndex: null };
-                      }
-                      return {
-                        url: img.url || img,
-                        colourIndex:
-                          img.colour !== "" && img.colour != null
-                            ? parseInt(img.colour)
-                            : null,
-                      };
-                    })
-                  : [],
-
-                colors: Array.isArray(p.colors)
-                  ? p.colors.map((color) => ({
-                      name: color.name || "Color",
-                      hex: color.hex || null,
-                    }))
-                  : [],
-
-                sizes: Array.isArray(p.sizes)
-                  ? p.sizes.map((s) => ({
-                      label: typeof s === "object" ? s.label : s,
-                      price:
-                        typeof s === "object" && s.price
-                          ? Number(s.price)
-                          : Number(p.price),
-                    }))
-                  : [],
-              };
-            })
-          : [];
-
-        if (transformedProducts.length > 0) {
-          const sample = transformedProducts[0];
-        }
-
-        setProducts(transformedProducts);
-
-        const initialImages = {};
-        transformedProducts.forEach((p) => {
-          initialImages[p.id] = p.image;
-        });
-        setActiveImages(initialImages);
-      } catch (error) {
-        console.error("Error loading products:", error);
-        setProducts([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchProducts();
-  }, [getProducts]);
-
+  // Handle sorting
   const handleSortChange = (value) => {
     setSortOption(value);
-    let sorted = [...products];
+    setCurrentPage(1); // Reset to page 1 when sorting changes
+  };
 
-    switch (value) {
-      case "price-low-high":
-        sorted.sort((a, b) => Number(a.basePrice) - Number(b.basePrice));
-        break;
-      case "price-high-low":
-        sorted.sort((a, b) => Number(b.basePrice) - Number(a.basePrice));
-        break;
-      case "alphabetical":
-        sorted.sort((a, b) => a.heading.localeCompare(b.heading));
-        break;
-      case "popularity":
-        sorted.sort((a, b) => (b.popular ? 1 : 0) - (a.popular ? 1 : 0));
-        break;
-      case "latest":
-        sorted.sort((a, b) => (b.latest ? 1 : 0) - (a.latest ? 1 : 0));
-        break;
-      default:
-        break;
+  // Handle page change
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= totalPages && newPage !== currentPage) {
+      setCurrentPage(newPage);
+      window.scrollTo({ top: 0, behavior: "smooth" });
     }
-    setProducts(sorted);
+  };
+
+  // Generate page numbers
+  const getPageNumbers = () => {
+    const pages = [];
+    const maxVisible = 5;
+
+    if (totalPages <= maxVisible) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      if (currentPage <= 3) {
+        for (let i = 1; i <= 4; i++) pages.push(i);
+        pages.push("...");
+        pages.push(totalPages);
+      } else if (currentPage >= totalPages - 2) {
+        pages.push(1);
+        pages.push("...");
+        for (let i = totalPages - 3; i <= totalPages; i++) pages.push(i);
+      } else {
+        pages.push(1);
+        pages.push("...");
+        for (let i = currentPage - 1; i <= currentPage + 1; i++) pages.push(i);
+        pages.push("...");
+        pages.push(totalPages);
+      }
+    }
+
+    return pages;
   };
 
   const handleColorClick = (productId, colorIndex) => {
@@ -209,16 +235,26 @@ const Products = () => {
     );
   }
 
+  // Calculate items showing
+  const startItem = (currentPage - 1) * itemsPerPage + 1;
+  const endItem = Math.min(currentPage * itemsPerPage, totalProducts);
+
   return (
     <div className="w-full py-12 md:py-20 bg-white">
       <div className="MyContainer">
+        {/* Header with sorting */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8 md:mb-10">
           <p
             className={`text-xs sm:text-sm italic font-medium text-gray-500 ${montserrat.className}`}
           >
             Showing{" "}
-            <span className="text-black font-semibold">{products.length}</span>{" "}
-            Products
+            <span className="text-black font-semibold">
+              {startItem}-{endItem}
+            </span>{" "}
+            of{" "}
+            <span className="text-black font-semibold">
+              {totalProducts} Products
+            </span>
           </p>
 
           <select
@@ -226,15 +262,14 @@ const Products = () => {
             onChange={(e) => handleSortChange(e.target.value)}
             className={`w-full sm:w-auto border border-gray-300 bg-white shadow-sm px-4 py-2.5 text-xs sm:text-sm rounded-md text-gray-700 focus:outline-none focus:ring-2 focus:ring-black ${montserrat.className}`}
           >
-            <option value="default">Default Sorting</option>
-            <option value="popularity">Sort by Popularity</option>
             <option value="latest">Sort by Latest</option>
-            <option value="price-low-high">Price: Low to High</option>
-            <option value="price-high-low">Price: High to Low</option>
-            <option value="alphabetical">Alphabetical (A-Z)</option>
+            <option value="oldest">Sort by Oldest</option>
+            <option value="price_low">Price: Low to High</option>
+            <option value="price_high">Price: High to Low</option>
           </select>
         </div>
 
+        {/* Products Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8 lg:gap-10">
           {products.length > 0 ? (
             products.map((product) => {
@@ -353,6 +388,62 @@ const Products = () => {
             </div>
           )}
         </div>
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="mt-12 flex flex-col items-center gap-4">
+            <div className="flex items-center justify-center gap-2">
+              {/* Previous Button */}
+              <button
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+                className="bg-white/90 backdrop-blur-xl border border-gray-300 p-3 hover:bg-black hover:text-white transition-all disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:text-black"
+                title="Previous Page"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+
+              {/* Page Numbers */}
+              {getPageNumbers().map((page, index) => (
+                <React.Fragment key={`page-${index}`}>
+                  {page === "..." ? (
+                    <span className="px-4 py-3 text-[10px] tracking-[0.2em] text-gray-400">
+                      ...
+                    </span>
+                  ) : (
+                    <button
+                      onClick={() => handlePageChange(page)}
+                      disabled={currentPage === page}
+                      className={`px-4 py-3 text-xs sm:text-sm font-medium transition-all ${
+                        currentPage === page
+                          ? "bg-black text-white cursor-default"
+                          : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-100 cursor-pointer"
+                      }`}
+                      title={`Go to page ${page}`}
+                    >
+                      {page}
+                    </button>
+                  )}
+                </React.Fragment>
+              ))}
+
+              {/* Next Button */}
+              <button
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                className="bg-white/90 backdrop-blur-xl border border-gray-300 p-3 hover:bg-black hover:text-white transition-all disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:text-black "
+                title="Next Page"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Pagination Info */}
+            <p className={`text-xs text-gray-500 ${montserrat.className}`}>
+              Page {currentPage} of {totalPages}
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );
