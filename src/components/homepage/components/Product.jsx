@@ -26,26 +26,32 @@ const Product = () => {
   const [selectedSizes, setSelectedSizes] = useState({});
   const [activeImages, setActiveImages] = useState({});
 
-  // ✅ Fetch newest arrivals (non-popular products) on mount
   useEffect(() => {
     const fetchNewestProducts = async () => {
       try {
         setLoading(true);
-        const data = await getProducts();
-        console.log("Newest arrivals raw data:", data);
+        
+        // ✅ FIX: Handle API response structure properly
+        const response = await getProducts(1, 100, 'latest');
+        console.log("✅ Newest Arrivals API Response:", response);
 
-        // Ensure we get an array
-        const productsArray = Array.isArray(data) ? data : [];
+        // ✅ FIX: Extract products array from response object
+        const productsArray = Array.isArray(response) 
+          ? response 
+          : (response?.products || []);
 
-        // ✅ Filter non-popular products and transform according to schema
-        // ✅ Filter only latest products and show maximum 4
+        console.log("✅ Products Array:", productsArray);
+
+        // ✅ Filter latest products and limit to 4
         const newest = productsArray
-          .filter((p) => p.latest === true) // Only products marked as latest
-          .slice(0, 4) // Show only 4
+          .filter((p) => {
+            console.log(`Product ${p.heading}: latest = ${p.latest}`);
+            return p.latest === true;
+          })
+          .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+          .slice(0, 4)
           .map((p) => {
-            // Get first image
             let firstImage = "/placeholder.jpg";
-
             if (p.images && p.images.length > 0) {
               firstImage =
                 typeof p.images[0] === "string"
@@ -57,13 +63,11 @@ const Product = () => {
               id: p._id,
               heading: p.heading || "Untitled Product",
               style: p.style || "",
-              basePrice: Number(p.price) || 0, // ✅ Store base price
+              basePrice: Number(p.price) || 0,
               popular: p.popular || false,
               latest: p.latest || false,
               sale: p.sale || false,
               image: firstImage,
-
-              // ✅ Store images with color INDEX
               images: Array.isArray(p.images)
                 ? p.images.map((img) => {
                     if (typeof img === "string") {
@@ -78,16 +82,12 @@ const Product = () => {
                     };
                   })
                 : [],
-
-              // ✅ Colors from schema's colors array
               colors: Array.isArray(p.colors)
                 ? p.colors.map((color) => ({
                     name: color.name || "Color",
                     hex: color.hex || null,
                   }))
                 : [],
-
-              // ✅ Store sizes with their prices
               sizes: Array.isArray(p.sizes)
                 ? p.sizes.map((s) => ({
                     label: typeof s === "object" ? s.label : s,
@@ -98,17 +98,17 @@ const Product = () => {
             };
           });
 
-        console.log("Transformed newest arrivals:", newest);
+        console.log(`✅ Found ${newest.length} newest products:`, newest);
+
         setNewestProducts(newest);
 
-        // Set initial active images
         const initialImages = {};
         newest.forEach((p) => {
           initialImages[p.id] = p.image;
         });
         setActiveImages(initialImages);
       } catch (error) {
-        console.error("Error loading newest products:", error);
+        console.error("❌ Error loading newest products:", error);
         setNewestProducts([]);
       } finally {
         setLoading(false);
@@ -118,10 +118,8 @@ const Product = () => {
     fetchNewestProducts();
   }, [getProducts]);
 
-  // ✅ Handle color click with INDEX
   const handleColorClick = (e, productId, colorIndex) => {
     e.preventDefault();
-    console.log("🎨 Color clicked - Index:", colorIndex);
 
     setSelectedColors((prev) => ({ ...prev, [productId]: colorIndex }));
 
@@ -133,7 +131,6 @@ const Product = () => {
       );
 
       if (matchingImage && matchingImage.url) {
-        console.log("🖼️ Switching to image:", matchingImage.url);
         setActiveImages((prev) => ({
           ...prev,
           [productId]: matchingImage.url,
@@ -147,13 +144,11 @@ const Product = () => {
     }
   };
 
-  // ✅ Handle size click - store size INDEX
   const handleSizeClick = (e, productId, sizeIndex) => {
     e.preventDefault();
     setSelectedSizes((prev) => ({ ...prev, [productId]: sizeIndex }));
   };
 
-  // ✅ Get color style (Tailwind class or hex)
   const getColorStyle = (colorName, colorHex) => {
     if (colorHex) {
       return { backgroundColor: colorHex };
@@ -207,7 +202,6 @@ const Product = () => {
             {newestProducts.map((product) => {
               const activeImg = activeImages[product.id] || product.image;
 
-              // ✅ Calculate displayed price based on selected size
               const selectedSizeIndex = selectedSizes[product.id];
               const displayedPrice =
                 selectedSizeIndex != null && product.sizes[selectedSizeIndex]
@@ -219,7 +213,6 @@ const Product = () => {
                   key={product.id}
                   className="flex flex-col items-center justify-start"
                 >
-                  {/* ✅ Only Image is Clickable */}
                   <Link href={`/product/${product.id}`}>
                     <div className="w-full h-[360px] flex items-center justify-center overflow-hidden group relative">
                       <Image
@@ -232,10 +225,14 @@ const Product = () => {
                           e.target.src = "/placeholder.jpg";
                         }}
                       />
+                      {product.sale && (
+                        <span className="absolute top-2 right-2 bg-red-600 text-white text-xs font-semibold px-2 py-1 rounded">
+                          SALE
+                        </span>
+                      )}
                     </div>
                   </Link>
 
-                  {/* Product Info */}
                   {product.style && (
                     <h3 className="text-sm text-black/40 mt-3">
                       {product.style}
@@ -245,14 +242,12 @@ const Product = () => {
                     {product.heading}
                   </h3>
 
-                  {/* ✅ Dynamic Price Display */}
                   <p
                     className={`text-md text-black/60 font-semibold ${montserrat.className}`}
                   >
                     ${displayedPrice.toFixed(2)}
                   </p>
 
-                  {/* ✅ Sizes with INDEX-based selection */}
                   {product.sizes && product.sizes.length > 0 ? (
                     <div className="flex items-center gap-2 mt-2 flex-wrap justify-center">
                       {product.sizes.map((size, idx) => {
@@ -276,7 +271,6 @@ const Product = () => {
                     <div className="h-9"></div>
                   )}
 
-                  {/* ✅ Colors with INDEX-based selection */}
                   {product.colors && product.colors.length > 0 ? (
                     <div className="flex items-center gap-3 mt-3 flex-wrap justify-center">
                       {product.colors.map((color, colorIndex) => {
@@ -324,7 +318,7 @@ const Product = () => {
           </div>
         ) : (
           <div className="text-center py-16 text-gray-500 mt-10">
-            No new arrivals available.
+            No newest arrivals available. Make sure some products have "latest: true" in the database.
           </div>
         )}
       </div>
