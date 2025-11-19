@@ -30,16 +30,27 @@ const Popular = () => {
     const fetchPopularProducts = async () => {
       try {
         setLoading(true);
-        const data = await getProducts();
-        console.log("Popular products raw data:", data);
+        
+        // ✅ FIX: Handle the API response structure properly
+        const response = await getProducts(1, 100, 'latest'); // Get more products to filter
+        console.log("✅ API Response:", response);
 
-        const productsArray = Array.isArray(data) ? data : [];
+        // ✅ FIX: Extract products array from response object
+        const productsArray = Array.isArray(response) 
+          ? response 
+          : (response?.products || []);
 
+        console.log("✅ Products Array:", productsArray);
+
+        // Filter for popular products
         const popular = productsArray
-          .filter((p) => p.popular === true)
+          .filter((p) => {
+            console.log(`Product ${p.heading}: popular = ${p.popular}`);
+            return p.popular === true;
+          })
+          .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
           .map((p) => {
             let firstImage = "/placeholder.jpg";
-
             if (p.images && p.images.length > 0) {
               firstImage =
                 typeof p.images[0] === "string"
@@ -51,13 +62,11 @@ const Popular = () => {
               id: p._id,
               heading: p.heading || "Untitled Product",
               style: p.style || "",
-              basePrice: Number(p.price) || 0, // ✅ Store base price
+              basePrice: Number(p.price) || 0,
               popular: p.popular || false,
               sale: p.sale || false,
               latest: p.latest || false,
               image: firstImage,
-
-              // ✅ Store images with color INDEX
               images: Array.isArray(p.images)
                 ? p.images.map((img) => {
                     if (typeof img === "string") {
@@ -72,15 +81,12 @@ const Popular = () => {
                     };
                   })
                 : [],
-
               colors: Array.isArray(p.colors)
                 ? p.colors.map((color) => ({
                     name: color.name || "Color",
                     hex: color.hex || null,
                   }))
                 : [],
-
-              // ✅ Store sizes with their prices
               sizes: Array.isArray(p.sizes)
                 ? p.sizes.map((s) => ({
                     label: typeof s === "object" ? s.label : s,
@@ -91,7 +97,8 @@ const Popular = () => {
             };
           });
 
-        console.log("Transformed popular products:", popular);
+        console.log(`✅ Found ${popular.length} popular products:`, popular);
+
         setPopularProducts(popular);
 
         const initialImages = {};
@@ -100,7 +107,7 @@ const Popular = () => {
         });
         setActiveImages(initialImages);
       } catch (error) {
-        console.error("Error loading popular products:", error);
+        console.error("❌ Error loading popular products:", error);
         setPopularProducts([]);
       } finally {
         setLoading(false);
@@ -110,10 +117,8 @@ const Popular = () => {
     fetchPopularProducts();
   }, [getProducts]);
 
-  // ✅ Handle color click with INDEX
   const handleColorClick = (e, productId, colorIndex) => {
     e.preventDefault();
-    console.log("🎨 Color clicked - Index:", colorIndex);
 
     setSelectedColors((prev) => ({ ...prev, [productId]: colorIndex }));
 
@@ -125,7 +130,6 @@ const Popular = () => {
       );
 
       if (matchingImage && matchingImage.url) {
-        console.log("🖼️ Switching to image:", matchingImage.url);
         setActiveImages((prev) => ({
           ...prev,
           [productId]: matchingImage.url,
@@ -139,7 +143,6 @@ const Popular = () => {
     }
   };
 
-  // ✅ Handle size click - store size INDEX
   const handleSizeClick = (e, productId, sizeIndex) => {
     e.preventDefault();
     setSelectedSizes((prev) => ({ ...prev, [productId]: sizeIndex }));
@@ -198,7 +201,6 @@ const Popular = () => {
             {popularProducts.map((product) => {
               const activeImg = activeImages[product.id] || product.image;
 
-              // ✅ Calculate displayed price based on selected size
               const selectedSizeIndex = selectedSizes[product.id];
               const displayedPrice =
                 selectedSizeIndex != null && product.sizes[selectedSizeIndex]
@@ -239,14 +241,12 @@ const Popular = () => {
                     {product.heading}
                   </h3>
 
-                  {/* ✅ Dynamic Price Display */}
                   <p
                     className={`text-md text-black/60 font-semibold ${montserrat.className}`}
                   >
                     ${displayedPrice.toFixed(2)}
                   </p>
 
-                  {/* ✅ Sizes with INDEX-based selection */}
                   {product.sizes && product.sizes.length > 0 ? (
                     <div className="flex items-center gap-2 mt-2 flex-wrap justify-center">
                       {product.sizes.map((size, idx) => {
@@ -270,7 +270,6 @@ const Popular = () => {
                     <div className="h-9"></div>
                   )}
 
-                  {/* ✅ Colors with INDEX-based selection */}
                   {product.colors && product.colors.length > 0 ? (
                     <div className="flex items-center gap-3 mt-3 flex-wrap justify-center">
                       {product.colors.map((color, colorIndex) => {
@@ -318,7 +317,7 @@ const Popular = () => {
           </div>
         ) : (
           <div className="text-center py-16 text-gray-500 mt-10">
-            No popular products available.
+            No popular products available. Make sure some products have "popular: true" in the database.
           </div>
         )}
       </div>
