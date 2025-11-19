@@ -285,6 +285,17 @@ export const AuthContextProvider = ({ children }) => {
     }
   };
 
+  // ✅ New function for related products
+  const getRelatedProducts = async (id) => {
+    try {
+      const res = await axios.get(`${API_URL}/products/related/${id}`);
+      return res.data;
+    } catch (err) {
+      console.error("Error fetching related products:", err);
+      return [];
+    }
+  };
+
   const getAllCategories = async () => {
     try {
       const response = await axios.get(`${API_URL}/categories`);
@@ -445,6 +456,7 @@ export const AuthContextProvider = ({ children }) => {
         loadingOrders,
         fetchUserOrders,
         updateOrderStatus,
+        getRelatedProducts,
       }}
     >
       {children}

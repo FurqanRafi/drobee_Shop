@@ -9,12 +9,11 @@ import CartDrawer from "@/components/cartComponent/CartDrawer";
 import { AuthContext } from "@/context/AuthContext";
 
 const OneProduct = () => {
-  const { getProductsById, getProducts } = useContext(AuthContext);
+  const { getProductsById, getRelatedProducts } = useContext(AuthContext);
   const dispatch = useDispatch();
   const { id } = useParams();
 
   const [product, setProduct] = useState(null);
-  const [allProducts, setAllProducts] = useState([]);
   const [relatedProducts, setRelatedProducts] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -35,54 +34,33 @@ const OneProduct = () => {
 
   useEffect(() => {
     const fetchData = async () => {
+      setLoading(true);
       try {
-        setLoading(true);
-
         const fetchedProduct = await getProductsById(id);
-
         if (!fetchedProduct) {
-          console.error("❌ No product found for ID:", id);
           setLoading(false);
           return;
         }
 
         setProduct(fetchedProduct);
-
-        const firstImage = fetchedProduct.image || "/placeholder.png";
-        setActiveImg(firstImage);
-
+        setActiveImg(fetchedProduct.image || "/placeholder.png");
         setSelectedColor(fetchedProduct.colors?.[0]?.name || null);
         setSelectedSize(
           fetchedProduct.sizes?.[0]?.label || fetchedProduct.sizes?.[0] || null
         );
         setSelectedSizeIndex(0);
 
-        const allProds = await getProducts();
-        setAllProducts(allProds);
-
-        const related = allProds.filter((p) => {
-          const pId = p._id || p.id;
-          const currentId = fetchedProduct._id || fetchedProduct.id;
-
-          return (
-            pId !== currentId &&
-            (p.category === fetchedProduct.category ||
-              p.style === fetchedProduct.style)
-          );
-        });
-
+        const related = await getRelatedProducts(fetchedProduct._id);
         setRelatedProducts(related.slice(0, 4));
       } catch (err) {
-        console.error("❌ Error fetching data:", err);
+        console.error("Error fetching product:", err);
       } finally {
         setLoading(false);
       }
     };
 
-    if (id) {
-      fetchData();
-    }
-  }, [id, getProductsById, getProducts]);
+    if (id) fetchData();
+  }, [id, getProductsById, getRelatedProducts]);
 
   if (loading) {
     return (
@@ -203,6 +181,15 @@ const OneProduct = () => {
     return relatedProduct.image || "/placeholder.png";
   };
 
+  const getCategoryDisplay = (category) => {
+    if (!category) return "Uncategorized";
+    if (typeof category === "string") return category;
+    if (typeof category === "object") {
+      return category.name || category.key || category._id || "Uncategorized";
+    }
+    return "Uncategorized";
+  };
+
   return (
     <>
       <CartDrawer isOpen={isDrawerOpen} setIsOpen={setIsDrawerOpen} />
@@ -275,11 +262,13 @@ const OneProduct = () => {
                 <span className="mx-1">/</span>
                 <Link
                   href={`/shop?category=${encodeURIComponent(
-                    product.category || product.style || ""
+                    getCategoryDisplay(product.category) || product.style || ""
                   )}`}
                   className="hover:text-black transition-colors capitalize"
                 >
-                  {product.style || product.category || "Products"}
+                  {getCategoryDisplay(product.category) ||
+                    product.style ||
+                    "Products"}
                 </Link>
                 <span className="mx-1">/</span>
                 <span className="text-black capitalize">
@@ -289,13 +278,12 @@ const OneProduct = () => {
 
               <div className="flex flex-col gap-2 border-b border-black/30 pb-5">
                 <h1 className="text-sm capitalize font-sans text-gray-600">
-                  {product.style || product.category}
+                  {product.style || getCategoryDisplay(product.category)}
                 </h1>
                 <h1 className="text-lg font-medium capitalize font-serif">
                   {product.heading || product.name}
                 </h1>
 
-                {/* ✅ Dynamic Price Display */}
                 <h1 className="text-2xl font-bold text-black/50 font-sans">
                   ${currentPrice.toFixed(2)}{" "}
                   <span className="font-medium text-xl">& Free Shipping</span>
@@ -333,7 +321,7 @@ const OneProduct = () => {
                   </div>
                 )}
 
-                {/* ✅ Sizes with Price Update */}
+                {/* Sizes */}
                 {product.sizes?.length > 0 && (
                   <div className="mt-4">
                     <h3 className="text-sm font-medium text-black/70 mb-2">
@@ -343,10 +331,6 @@ const OneProduct = () => {
                       {product.sizes.map((size, idx) => {
                         const sizeLabel =
                           typeof size === "object" ? size.label : size;
-                        const sizePrice =
-                          typeof size === "object" && size.price
-                            ? Number(size.price)
-                            : Number(product.price);
 
                         return (
                           <button
@@ -387,7 +371,7 @@ const OneProduct = () => {
                   </button>
                 </div>
 
-                {/* ✅ Total Price Display */}
+                {/* Total Price */}
                 {qty > 1 && (
                   <div className="mt-2 text-sm text-gray-600">
                     Total:{" "}
@@ -404,7 +388,7 @@ const OneProduct = () => {
               <h1 className="text-sm text-black/40 py-5">
                 Category:{" "}
                 <span className="text-black">
-                  {product.style || product.category}
+                  {product.style || getCategoryDisplay(product.category)}
                 </span>
               </h1>
 
@@ -622,6 +606,10 @@ const OneProduct = () => {
                 {relatedProducts.map((related) => {
                   const relatedId = related._id || related.id;
                   const relatedImage = getRelatedProductImage(related);
+                  const relatedCategory =
+                    getCategoryDisplay(related.category) ||
+                    related.style ||
+                    "Uncategorized";
 
                   return (
                     <Link
@@ -637,10 +625,10 @@ const OneProduct = () => {
                           e.target.src = "/placeholder.png";
                         }}
                       />
-                      <h3 className="text-sm text-gray-500 mt-2">
-                        {related.style || related.category}
+                      <h3 className="text-sm text-gray-500 mt-2 capitalize">
+                        {relatedCategory}
                       </h3>
-                      <h3 className="text-md font-medium">
+                      <h3 className="text-md font-medium capitalize">
                         {related.heading || related.name}
                       </h3>
                       <p className="text-black/70 font-semibold">
