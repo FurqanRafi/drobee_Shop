@@ -136,7 +136,10 @@ const Checkout = () => {
 
   const cartItems = useSelector((state) => state.cart.cartItems);
 
-  const { createCheckout, getshipping, user } = useContext(AuthContext);
+  const { createCheckout, createStripePayment, getshipping, user } =
+    useContext(AuthContext);
+
+  const [paymentMethod, setPaymentMethod] = useState("cod");
 
   const [shippingMethods, setShippingMethods] = useState([]);
   const [selectedShipping, setSelectedShipping] = useState(null);
@@ -322,9 +325,8 @@ const Checkout = () => {
     setIsSubmitting(true);
 
     try {
-      // ✅ FIXED: Always send logged-in user's _id
       const userData = {
-        _id: user?._id, // NOW this is correct logged-in user
+        _id: user?._id,
         firstname: formData.firstname.trim(),
         lastname: formData.lastname.trim(),
         email: formData.email.trim(),
@@ -352,6 +354,36 @@ const Checkout = () => {
 
       const shippingCost = isFreeShipping ? 0 : selectedShipping?.price || 0;
 
+      // **IF STRIPE SELECTED**
+      if (paymentMethod === "stripe") {
+        const checkoutResponse = await createCheckout(
+          userData,
+          products,
+          total,
+          discount,
+          shippingCost
+        );
+
+        const orderId = checkoutResponse.order?._id || checkoutResponse._id;
+
+        // ✅ Shipping details add karo
+        const shippingDetails = {
+          method: selectedShipping?.name || "Standard Shipping",
+          cost: shippingCost,
+        };
+
+        const stripeResponse = await createStripePayment(
+          products,
+          total,
+          orderId,
+          shippingDetails // ✅ Yeh parameter add karo
+        );
+
+        window.location.href = stripeResponse.url;
+        return;
+      }
+
+      // **IF CASH ON DELIVERY**
       const response = await createCheckout(
         userData,
         products,
@@ -363,7 +395,6 @@ const Checkout = () => {
       if (response) {
         setSuccess(true);
         dispatch(clearCart());
-        console.log("✅ Cart cleared successfully after checkout");
       } else {
         setError("Failed to create checkout. Please try again.");
       }
@@ -678,14 +709,58 @@ const Checkout = () => {
 
             {/* Payment Section */}
             <div className="bg-white rounded-lg shadow-sm p-6">
-              <h2 className="text-2xl font-serif mb-4">Payment</h2>
-              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                <p className="text-sm text-gray-700 mb-2 font-medium">
-                  Cash on Delivery
-                </p>
-                <p className="text-sm text-gray-600">
-                  Pay with cash upon delivery.
-                </p>
+              <h2 className="text-2xl font-serif mb-4">Payment Method</h2>
+
+              <div className="space-y-3">
+                {/* Cash on Delivery */}
+                <div
+                  onClick={() => setPaymentMethod("cod")}
+                  className={`border rounded-lg p-4 cursor-pointer ${
+                    paymentMethod === "cod"
+                      ? "border-gray-900 bg-gray-50"
+                      : "border-gray-300"
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="radio"
+                      checked={paymentMethod === "cod"}
+                      onChange={() => setPaymentMethod("cod")}
+                      className="w-4 h-4"
+                    />
+                    <div>
+                      <p className="font-medium">Cash on Delivery</p>
+                      <p className="text-sm text-gray-600">
+                        Pay with cash upon delivery
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Stripe Payment */}
+                <div
+                  onClick={() => setPaymentMethod("stripe")}
+                  className={`border rounded-lg p-4 cursor-pointer ${
+                    paymentMethod === "stripe"
+                      ? "border-gray-900 bg-gray-50"
+                      : "border-gray-300"
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="radio"
+                      checked={paymentMethod === "stripe"}
+                      onChange={() => setPaymentMethod("stripe")}
+                      className="w-4 h-4"
+                    />
+                    <div>
+                      <p className="font-medium">Credit/Debit Card</p>
+                      <p className="text-sm text-gray-600">
+                        Secure payment via Stripe
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 

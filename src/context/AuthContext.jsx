@@ -428,6 +428,30 @@ export const AuthContextProvider = ({ children }) => {
     }
   };
 
+  const createStripePayment = async (
+    products,
+    total,
+    orderId,
+    shippingDetails
+  ) => {
+    const response = await fetch(
+      `http://localhost:5000/api/create-payment-intent`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          products,
+          amount: total,
+          orderId,
+          shipping: shippingDetails,
+        }),
+      }
+    );
+    return response.json();
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -457,6 +481,7 @@ export const AuthContextProvider = ({ children }) => {
         fetchUserOrders,
         updateOrderStatus,
         getRelatedProducts,
+        createStripePayment,
       }}
     >
       {children}

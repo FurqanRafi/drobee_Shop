@@ -18,9 +18,7 @@ import { AuthContext } from "@/context/AuthContext";
 
 const Orders = () => {
   const { orders, loadingOrders, updateOrderStatus } = useContext(AuthContext);
-  console.log("📦 Orders data:", orders);
-  console.log("📦 Loading state:", loadingOrders);
-  console.log("📦 Total orders:", orders?.length);
+
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [filterStatus, setFilterStatus] = useState("all");
