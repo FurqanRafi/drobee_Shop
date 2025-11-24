@@ -434,21 +434,19 @@ export const AuthContextProvider = ({ children }) => {
     orderId,
     shippingDetails
   ) => {
-    const response = await fetch(
-      `http://localhost:5000/api/create-payment-intent`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          products,
-          amount: total,
-          orderId,
-          shipping: shippingDetails,
-        }),
-      }
-    );
+    const response = await fetch(`${API_URL}/create-payment-intent`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        products,
+        amount: total,
+        orderId,
+        shipping: shippingDetails,
+      }),
+    });
+
     return response.json();
   };
 
