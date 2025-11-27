@@ -326,7 +326,7 @@ const Checkout = () => {
 
     try {
       const userData = {
-        _id: user?._id,
+        _id: user?.id,
         firstname: formData.firstname.trim(),
         lastname: formData.lastname.trim(),
         email: formData.email.trim(),

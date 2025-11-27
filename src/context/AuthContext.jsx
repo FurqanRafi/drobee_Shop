@@ -15,7 +15,7 @@ export const AuthContextProvider = ({ children }) => {
   const [loadingOrders, setLoadingOrders] = useState(false);
   const router = useRouter();
 
-  const API_URL = "https://drobee-backend.vercel.app/api";
+  const API_URL = "http://localhost:5000/api";
 
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
@@ -343,6 +343,17 @@ export const AuthContextProvider = ({ children }) => {
         shippingCost: shippingCost || 0,
         paymentMethod: "Cash on Delivery",
         status: "pending",
+        user:{
+          id:user.id || null,
+          username:user.username || null,
+          email:user.email || null,
+          phone:user.phone || null,
+          address:user.address || null,
+          country:user.country || null,
+          city:user.city || null,
+          postalCode:user.postalCode || null,
+          
+        }
       };
 
       const res = await fetch(`${API_URL}/checkout`, {
