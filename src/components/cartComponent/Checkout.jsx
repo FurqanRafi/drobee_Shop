@@ -364,7 +364,7 @@ const Checkout = () => {
           shippingCost
         );
 
-        const orderId = checkoutResponse.order?._id || checkoutResponse._id;
+        const orderId = checkoutResponse.order?.id || checkoutResponse.id;
 
         // ✅ Shipping details add karo
         const shippingDetails = {
