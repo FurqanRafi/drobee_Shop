@@ -343,16 +343,27 @@ export const AuthContextProvider = ({ children }) => {
         shippingCost: shippingCost || 0,
         paymentMethod: "Cash on Delivery",
         status: "pending",
-        user: {
-          id: user.id || null,
-          username: user.username || null,
-          email: user.email || null,
-          phone: user.phone || null,
-          address: user.address || null,
-          country: user.country || null,
-          city: user.city || null,
-          postalCode: user.postalCode || null,
-        },
+        user: user
+          ? {
+              id: user.id || null,
+              username: user.username || null,
+              email: user.email || userData.email || null,
+              phone: user.phone || userData.phone || null,
+              address: user.address || userData.address || null,
+              country: user.country || userData.country || null,
+              city: user.city || userData.city || null,
+              postalCode: user.postalCode || userData.postalCode || null,
+            }
+          : {
+              id: null,
+              username: userData.firstname + " " + userData.lastname,
+              email: userData.email,
+              phone: userData.phone,
+              address: userData.address,
+              country: userData.country,
+              city: userData.city,
+              postalCode: userData.postalCode,
+            },
       };
 
       const res = await fetch(`${API_URL}/checkout`, {
